@@ -29,18 +29,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userDoc, setUserDoc] = useState<UserDoc | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch user document from Firestore
-  const fetchUserDoc = async (uid: string) => {
+  // Fetch or create user document from Firestore
+  const fetchOrCreateUserDoc = async (user: User) => {
     try {
-      const docRef = doc(db, 'users', uid);
+      const docRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         setUserDoc(docSnap.data() as UserDoc);
       } else {
-        setUserDoc(null);
+        // Create user doc if it doesn't exist
+        const newUserDoc: UserDoc = { email: user.email || '' };
+        await setDoc(docRef, newUserDoc);
+        setUserDoc(newUserDoc);
       }
     } catch (error) {
-      console.error('Error fetching user doc:', error);
+      console.error('Error with user doc:', error);
       setUserDoc(null);
     }
   };
@@ -49,10 +52,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (user) {
-        await fetchUserDoc(user.uid);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      if (firebaseUser) {
+        await fetchOrCreateUserDoc(firebaseUser);
       } else {
         setUserDoc(null);
       }
@@ -67,13 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
-    const credential = await createUserWithEmailAndPassword(auth, email, password);
-
-    // Create user document in Firestore
-    const userDocRef = doc(db, 'users', credential.user.uid);
-    await setDoc(userDocRef, {
-      email: credential.user.email,
-    });
+    // User doc will be created by the onAuthStateChanged listener
+    await createUserWithEmailAndPassword(auth, email, password);
   };
 
   const signOut = async () => {
@@ -83,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUserDoc = async () => {
     if (user) {
-      await fetchUserDoc(user.uid);
+      await fetchOrCreateUserDoc(user);
     }
   };
 
