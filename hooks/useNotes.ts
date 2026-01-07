@@ -54,6 +54,13 @@ export function useNotes(book: Book | undefined, userProgressSeconds: number) {
       })) as Note[];
       setAllNotes(notes);
       setLoading(false);
+    }, (error) => {
+      console.error('Notes query error:', error);
+      // If index error, the message will contain a link to create it
+      if (error.message.includes('index')) {
+        console.error('👆 Click the link above to create the required Firestore index');
+      }
+      setLoading(false);
     });
 
     return () => unsub();
