@@ -83,6 +83,8 @@ export function useGuild() {
 
   // Create a new guild
   const createGuild = useCallback(async (name: string) => {
+    console.log('[createGuild] Starting...', { user: user?.uid, email: user?.email });
+
     if (!user) throw new Error('Must be signed in');
 
     setError(null);
@@ -91,6 +93,7 @@ export function useGuild() {
       const inviteCode = generateInviteCode();
       const displayName = user.email?.split('@')[0] || 'User';
 
+      console.log('[createGuild] Step 1: Creating guild doc...', { guildId, inviteCode });
       // Create guild document
       const guildRef = doc(db, 'guilds', guildId);
       await setDoc(guildRef, {
@@ -100,7 +103,9 @@ export function useGuild() {
         inviteCode,
         memberCount: 1,
       });
+      console.log('[createGuild] Step 1: SUCCESS');
 
+      console.log('[createGuild] Step 2: Creating member doc...');
       // Add creator as owner member
       const memberRef = doc(db, 'guilds', guildId, 'members', user.uid);
       await setDoc(memberRef, {
@@ -109,14 +114,19 @@ export function useGuild() {
         role: 'owner',
         joinedAt: serverTimestamp(),
       });
+      console.log('[createGuild] Step 2: SUCCESS');
 
+      console.log('[createGuild] Step 3: Updating user doc...');
       // Update user's currentGuildId (use setDoc with merge in case doc doesn't exist)
       const userRef = doc(db, 'users', user.uid);
       await setDoc(userRef, { currentGuildId: guildId, email: user.email }, { merge: true });
+      console.log('[createGuild] Step 3: SUCCESS');
 
       await refreshUserDoc();
+      console.log('[createGuild] COMPLETE!');
       return guildId;
     } catch (err) {
+      console.error('[createGuild] FAILED:', err);
       const message = err instanceof Error ? err.message : 'Failed to create guild';
       setError(message);
       throw err;

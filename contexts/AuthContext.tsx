@@ -31,19 +31,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch or create user document from Firestore
   const fetchOrCreateUserDoc = async (user: User) => {
+    console.log('[Auth] fetchOrCreateUserDoc called', { uid: user.uid, email: user.email });
     try {
       const docRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
+        console.log('[Auth] User doc exists:', docSnap.data());
         setUserDoc(docSnap.data() as UserDoc);
       } else {
+        console.log('[Auth] Creating new user doc...');
         // Create user doc if it doesn't exist
         const newUserDoc: UserDoc = { email: user.email || '' };
         await setDoc(docRef, newUserDoc);
+        console.log('[Auth] User doc created');
         setUserDoc(newUserDoc);
       }
     } catch (error) {
-      console.error('Error with user doc:', error);
+      console.error('[Auth] Error with user doc:', error);
       setUserDoc(null);
     }
   };
@@ -52,7 +56,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    console.log('[Auth] Setting up auth listener...');
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log('[Auth] Auth state changed:', firebaseUser ? { uid: firebaseUser.uid, email: firebaseUser.email } : 'null');
       setUser(firebaseUser);
       if (firebaseUser) {
         await fetchOrCreateUserDoc(firebaseUser);
