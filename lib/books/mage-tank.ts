@@ -137,7 +137,7 @@ export const MAGE_TANK_3: Book = {
   title: 'Mage Tank 3',
   author: 'Cornman',
   narrator: 'Daniel Wisniewski',
-  coverUrl: '/covers/mage-tank-3.jpg',
+  coverUrl: '/covers/mage-tank-3.webp',
   totalDurationSeconds: MAGE_TANK_3_DURATION,
   chapters: generateChapters(MAGE_TANK_3_DURATION, 83, {
     hasOpeningCredits: true,
