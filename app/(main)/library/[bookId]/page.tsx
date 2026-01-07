@@ -11,6 +11,7 @@ import { useGuild } from '@/hooks/useGuild';
 import { ChapterPicker } from '@/components/ChapterPicker';
 import { NoteInput } from '@/components/NoteInput';
 import { NoteTimeline } from '@/components/NoteTimeline';
+import { BookCover } from '@/components/BookCover';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -116,11 +117,7 @@ export default function BookPage() {
     <div className="space-y-6">
       {/* Book Header */}
       <div className="flex gap-6">
-        <div className="w-32 h-44 bg-muted rounded-lg flex items-center justify-center shrink-0">
-          <div className="text-3xl font-bold text-muted-foreground/30">
-            {book.title.split(' ').slice(-1)[0]}
-          </div>
-        </div>
+        <BookCover title={book.title} coverUrl={book.coverUrl} size="md" />
         <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold">{book.title}</h1>
           <p className="text-muted-foreground">{book.author}</p>

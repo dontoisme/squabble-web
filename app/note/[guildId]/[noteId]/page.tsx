@@ -10,6 +10,8 @@ import { formatTimestamp } from '@/lib/utils/time';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { BookCover } from '@/components/BookCover';
+import { getBookById } from '@/lib/books/mage-tank';
 import { MessageSquare, BookOpen, Clock, User } from 'lucide-react';
 
 export default function NotePage() {
@@ -86,49 +88,45 @@ export default function NotePage() {
       {/* Note content */}
       <main className="container max-w-2xl mx-auto px-4 py-8">
         <Card>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  Shared Note
-                </CardTitle>
-                <CardDescription className="flex items-center gap-4">
-                  <span className="flex items-center gap-1">
-                    <BookOpen className="h-3.5 w-3.5" />
-                    {note.bookTitle}
-                  </span>
-                </CardDescription>
+          <CardContent className="pt-6">
+            <div className="flex gap-4">
+              {/* Book cover */}
+              <BookCover
+                title={note.bookTitle}
+                coverUrl={getBookById(note.bookId)?.coverUrl}
+                size="sm"
+              />
+
+              {/* Note details */}
+              <div className="flex-1 min-w-0 space-y-3">
+                {/* Header */}
+                <div>
+                  <h2 className="font-semibold text-lg">{note.bookTitle}</h2>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <User className="h-3.5 w-3.5" />
+                    <span>{note.userDisplayName}</span>
+                    <span className="text-muted-foreground/50">at</span>
+                    <Badge variant="secondary" className="font-mono text-xs">
+                      {formatTimestamp(note.timestamp)}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Note text */}
+                <blockquote className="border-l-4 border-primary/30 pl-4 py-2 text-base">
+                  {note.text}
+                </blockquote>
+
+                {/* CTA */}
+                <div className="pt-2">
+                  <Link href={`/library/${note.bookId}`}>
+                    <Button size="sm">
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      View in Book
+                    </Button>
+                  </Link>
+                </div>
               </div>
-              <Badge variant="secondary">
-                <Clock className="h-3 w-3 mr-1" />
-                {formatTimestamp(note.timestamp)}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Author */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <User className="h-4 w-4" />
-              <span>{note.userDisplayName}</span>
-            </div>
-
-            {/* Note text */}
-            <blockquote className="border-l-4 border-primary/30 pl-4 py-2 text-lg">
-              {note.text}
-            </blockquote>
-
-            {/* CTA */}
-            <div className="pt-4 border-t">
-              <p className="text-sm text-muted-foreground mb-3">
-                This note was left at {formatTimestamp(note.timestamp)} in the audiobook.
-              </p>
-              <Link href={`/library/${note.bookId}`}>
-                <Button>
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  View in {note.bookTitle}
-                </Button>
-              </Link>
             </div>
           </CardContent>
         </Card>

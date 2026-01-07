@@ -5,6 +5,7 @@ import { MAGE_TANK_BOOKS } from '@/lib/books/mage-tank';
 import { formatDuration } from '@/lib/utils/time';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { BookCover } from '@/components/BookCover';
 import { useGuild } from '@/hooks/useGuild';
 
 export default function LibraryPage() {
@@ -42,10 +43,8 @@ export default function LibraryPage() {
           <Link key={book.id} href={`/library/${book.id}`}>
             <Card className="h-full hover:bg-muted/50 transition-colors cursor-pointer">
               <CardHeader className="pb-2">
-                <div className="aspect-[3/4] bg-muted rounded-md mb-3 flex items-center justify-center overflow-hidden">
-                  <div className="text-4xl font-bold text-muted-foreground/30">
-                    {book.title.split(' ').slice(-1)[0]}
-                  </div>
+                <div className="flex justify-center mb-3">
+                  <BookCover title={book.title} coverUrl={book.coverUrl} size="lg" />
                 </div>
                 <CardTitle className="text-lg">{book.title}</CardTitle>
                 <CardDescription>{book.author}</CardDescription>
