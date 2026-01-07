@@ -1,150 +1,265 @@
-import { Book, Chapter } from './types';
+import { Book } from './types';
 
-// Helper to generate chapters with named intro/outro sections
-function generateChapters(
-  totalDuration: number,
-  mainChapterCount: number,
-  options: {
-    hasOpeningCredits?: boolean;
-    hasPrologue?: boolean;
-    hasEpilogue?: boolean;
-    hasEndCharacterSheet?: boolean;
-    hasEndCredits?: boolean;
-  } = {}
-): Chapter[] {
-  const chapters: Chapter[] = [];
-  let currentTime = 0;
-
-  // Estimate durations for special sections
-  const creditsDuration = 60; // 1 min for credits
-  const charSheetDuration = 300; // 5 min for character sheet
-  const epilogueDuration = totalDuration * 0.02; // 2% for epilogue
-
-  // Calculate main chapter duration
-  let specialDuration = 0;
-  if (options.hasOpeningCredits) specialDuration += creditsDuration;
-  if (options.hasEndCredits) specialDuration += creditsDuration;
-  if (options.hasEndCharacterSheet) specialDuration += charSheetDuration;
-  if (options.hasEpilogue) specialDuration += epilogueDuration;
-
-  const mainDuration = totalDuration - specialDuration;
-  const avgChapterDuration = mainDuration / mainChapterCount;
-
-  // Opening Credits
-  if (options.hasOpeningCredits) {
-    chapters.push({
-      index: chapters.length,
-      title: 'Opening Credits',
-      startSeconds: currentTime,
-      durationSeconds: creditsDuration,
-    });
-    currentTime += creditsDuration;
-  }
-
-  // Main chapters
-  for (let i = 1; i <= mainChapterCount; i++) {
-    // Vary chapter length slightly (+/- 5%)
-    const variance = 1 + (((i * 7) % 10) / 100 - 0.05);
-    let duration = Math.floor(avgChapterDuration * variance);
-
-    chapters.push({
-      index: chapters.length,
-      title: `Chapter ${i}`,
-      startSeconds: currentTime,
-      durationSeconds: duration,
-    });
-    currentTime += duration;
-  }
-
-  // Epilogue
-  if (options.hasEpilogue) {
-    chapters.push({
-      index: chapters.length,
-      title: 'Epilogue',
-      startSeconds: currentTime,
-      durationSeconds: Math.floor(epilogueDuration),
-    });
-    currentTime += Math.floor(epilogueDuration);
-  }
-
-  // End Character Sheet
-  if (options.hasEndCharacterSheet) {
-    chapters.push({
-      index: chapters.length,
-      title: 'End Character Sheet',
-      startSeconds: currentTime,
-      durationSeconds: charSheetDuration,
-    });
-    currentTime += charSheetDuration;
-  }
-
-  // End Credits
-  if (options.hasEndCredits) {
-    // Adjust to fill remaining time
-    const remaining = totalDuration - currentTime;
-    chapters.push({
-      index: chapters.length,
-      title: 'End Credits',
-      startSeconds: currentTime,
-      durationSeconds: remaining > 0 ? remaining : creditsDuration,
-    });
-  }
-
-  return chapters;
-}
-
-// Mage Tank Book 1 - ~17 hours 45 min
-// Opening Credits, Chapters 1-70, Epilogue, End Character Sheet, End Credits
-const MAGE_TANK_1_DURATION = 17 * 3600 + 45 * 60; // 63,900 seconds
+// Mage Tank Book 1 - 74 chapters, 20h 38m (extracted from M4B)
 export const MAGE_TANK_1: Book = {
   id: 'mage-tank-1',
   title: 'Mage Tank',
   author: 'Cornman',
   narrator: 'Daniel Wisniewski',
   coverUrl: '/covers/mage-tank-1.jpg',
-  totalDurationSeconds: MAGE_TANK_1_DURATION,
-  chapters: generateChapters(MAGE_TANK_1_DURATION, 70, {
-    hasOpeningCredits: true,
-    hasEpilogue: true,
-    hasEndCharacterSheet: true,
-    hasEndCredits: true,
-  }),
+  totalDurationSeconds: 74281,
+  chapters: [
+    { index: 0, title: 'Opening Credits', startSeconds: 0, durationSeconds: 24 },
+    { index: 1, title: 'Chapter 1', startSeconds: 24, durationSeconds: 1200 },
+    { index: 2, title: 'Chapter 2', startSeconds: 1225, durationSeconds: 1235 },
+    { index: 3, title: 'Chapter 3', startSeconds: 2460, durationSeconds: 1047 },
+    { index: 4, title: 'Chapter 4', startSeconds: 3508, durationSeconds: 1109 },
+    { index: 5, title: 'Chapter 5', startSeconds: 4617, durationSeconds: 1028 },
+    { index: 6, title: 'Chapter 6', startSeconds: 5646, durationSeconds: 1021 },
+    { index: 7, title: 'Chapter 7', startSeconds: 6668, durationSeconds: 1231 },
+    { index: 8, title: 'Chapter 8', startSeconds: 7899, durationSeconds: 1107 },
+    { index: 9, title: 'Chapter 9', startSeconds: 9006, durationSeconds: 868 },
+    { index: 10, title: 'Chapter 10', startSeconds: 9875, durationSeconds: 716 },
+    { index: 11, title: 'Chapter 11', startSeconds: 10591, durationSeconds: 700 },
+    { index: 12, title: 'Chapter 12', startSeconds: 11291, durationSeconds: 1132 },
+    { index: 13, title: 'Chapter 13', startSeconds: 12424, durationSeconds: 1015 },
+    { index: 14, title: 'Chapter 14', startSeconds: 13439, durationSeconds: 759 },
+    { index: 15, title: 'Chapter 15', startSeconds: 14199, durationSeconds: 911 },
+    { index: 16, title: 'Chapter 16', startSeconds: 15110, durationSeconds: 1109 },
+    { index: 17, title: 'Chapter 17', startSeconds: 16220, durationSeconds: 981 },
+    { index: 18, title: 'Chapter 18', startSeconds: 17202, durationSeconds: 807 },
+    { index: 19, title: 'Chapter 19', startSeconds: 18009, durationSeconds: 1224 },
+    { index: 20, title: 'Chapter 20', startSeconds: 19234, durationSeconds: 983 },
+    { index: 21, title: 'Chapter 21', startSeconds: 20218, durationSeconds: 997 },
+    { index: 22, title: 'Chapter 22', startSeconds: 21215, durationSeconds: 917 },
+    { index: 23, title: 'Chapter 23', startSeconds: 22133, durationSeconds: 1159 },
+    { index: 24, title: 'Chapter 24', startSeconds: 23292, durationSeconds: 980 },
+    { index: 25, title: 'Chapter 25', startSeconds: 24273, durationSeconds: 858 },
+    { index: 26, title: 'Chapter 26', startSeconds: 25131, durationSeconds: 870 },
+    { index: 27, title: 'Chapter 27', startSeconds: 26001, durationSeconds: 916 },
+    { index: 28, title: 'Chapter 28', startSeconds: 26918, durationSeconds: 1158 },
+    { index: 29, title: 'Chapter 29', startSeconds: 28077, durationSeconds: 884 },
+    { index: 30, title: 'Chapter 30', startSeconds: 28961, durationSeconds: 1108 },
+    { index: 31, title: 'Chapter 31', startSeconds: 30069, durationSeconds: 1046 },
+    { index: 32, title: 'Chapter 32', startSeconds: 31115, durationSeconds: 1054 },
+    { index: 33, title: 'Chapter 33', startSeconds: 32170, durationSeconds: 1075 },
+    { index: 34, title: 'Chapter 34', startSeconds: 33246, durationSeconds: 932 },
+    { index: 35, title: 'Chapter 35', startSeconds: 34178, durationSeconds: 1288 },
+    { index: 36, title: 'Chapter 36', startSeconds: 35466, durationSeconds: 1580 },
+    { index: 37, title: 'Chapter 37', startSeconds: 37047, durationSeconds: 1315 },
+    { index: 38, title: 'Chapter 38', startSeconds: 38363, durationSeconds: 1241 },
+    { index: 39, title: 'Chapter 39', startSeconds: 39605, durationSeconds: 974 },
+    { index: 40, title: 'Chapter 40', startSeconds: 40579, durationSeconds: 1036 },
+    { index: 41, title: 'Chapter 41', startSeconds: 41616, durationSeconds: 894 },
+    { index: 42, title: 'Chapter 42', startSeconds: 42510, durationSeconds: 858 },
+    { index: 43, title: 'Chapter 43', startSeconds: 43368, durationSeconds: 1014 },
+    { index: 44, title: 'Chapter 44', startSeconds: 44383, durationSeconds: 1310 },
+    { index: 45, title: 'Chapter 45', startSeconds: 45693, durationSeconds: 918 },
+    { index: 46, title: 'Chapter 46', startSeconds: 46611, durationSeconds: 1051 },
+    { index: 47, title: 'Chapter 47', startSeconds: 47663, durationSeconds: 863 },
+    { index: 48, title: 'Chapter 48', startSeconds: 48526, durationSeconds: 1009 },
+    { index: 49, title: 'Chapter 49', startSeconds: 49536, durationSeconds: 1061 },
+    { index: 50, title: 'Chapter 50', startSeconds: 50598, durationSeconds: 1015 },
+    { index: 51, title: 'Chapter 51', startSeconds: 51614, durationSeconds: 1178 },
+    { index: 52, title: 'Chapter 52', startSeconds: 52793, durationSeconds: 1054 },
+    { index: 53, title: 'Chapter 53', startSeconds: 53847, durationSeconds: 1155 },
+    { index: 54, title: 'Chapter 54', startSeconds: 55003, durationSeconds: 1091 },
+    { index: 55, title: 'Chapter 55', startSeconds: 56095, durationSeconds: 1007 },
+    { index: 56, title: 'Chapter 56', startSeconds: 57102, durationSeconds: 1141 },
+    { index: 57, title: 'Chapter 57', startSeconds: 58244, durationSeconds: 1083 },
+    { index: 58, title: 'Chapter 58', startSeconds: 59328, durationSeconds: 1030 },
+    { index: 59, title: 'Chapter 59', startSeconds: 60358, durationSeconds: 1253 },
+    { index: 60, title: 'Chapter 60', startSeconds: 61611, durationSeconds: 994 },
+    { index: 61, title: 'Chapter 61', startSeconds: 62606, durationSeconds: 1140 },
+    { index: 62, title: 'Chapter 62', startSeconds: 63746, durationSeconds: 846 },
+    { index: 63, title: 'Chapter 63', startSeconds: 64592, durationSeconds: 847 },
+    { index: 64, title: 'Chapter 64', startSeconds: 65440, durationSeconds: 1037 },
+    { index: 65, title: 'Chapter 65', startSeconds: 66478, durationSeconds: 1335 },
+    { index: 66, title: 'Chapter 66', startSeconds: 67813, durationSeconds: 1124 },
+    { index: 67, title: 'Chapter 67', startSeconds: 68938, durationSeconds: 1155 },
+    { index: 68, title: 'Chapter 68', startSeconds: 70093, durationSeconds: 1031 },
+    { index: 69, title: 'Chapter 69', startSeconds: 71125, durationSeconds: 850 },
+    { index: 70, title: 'Chapter 70', startSeconds: 71976, durationSeconds: 1701 },
+    { index: 71, title: 'Epilogue', startSeconds: 73677, durationSeconds: 400 },
+    { index: 72, title: 'End Character Sheet', startSeconds: 74078, durationSeconds: 165 },
+    { index: 73, title: 'End Credits', startSeconds: 74244, durationSeconds: 37 },
+  ],
 };
 
-// Mage Tank Book 2 - ~23 hours 30 min
-// 67 chapters (assume same pattern)
-const MAGE_TANK_2_DURATION = 23 * 3600 + 30 * 60; // 84,600 seconds
+// Mage Tank Book 2 - 68 chapters, 19h 27m (extracted from M4B)
 export const MAGE_TANK_2: Book = {
   id: 'mage-tank-2',
   title: 'Mage Tank 2',
   author: 'Cornman',
   narrator: 'Daniel Wisniewski',
   coverUrl: '/covers/mage-tank-2.jpg',
-  totalDurationSeconds: MAGE_TANK_2_DURATION,
-  chapters: generateChapters(MAGE_TANK_2_DURATION, 67, {
-    hasOpeningCredits: true,
-    hasEpilogue: true,
-    hasEndCharacterSheet: true,
-    hasEndCredits: true,
-  }),
+  totalDurationSeconds: 70047,
+  chapters: [
+    { index: 0, title: 'Opening Credits', startSeconds: 0, durationSeconds: 28 },
+    { index: 1, title: 'Chapter 1', startSeconds: 28, durationSeconds: 1112 },
+    { index: 2, title: 'Chapter 2', startSeconds: 1140, durationSeconds: 1143 },
+    { index: 3, title: 'Chapter 3', startSeconds: 2283, durationSeconds: 428 },
+    { index: 4, title: 'Chapter 4', startSeconds: 2712, durationSeconds: 800 },
+    { index: 5, title: 'Chapter 5', startSeconds: 3512, durationSeconds: 820 },
+    { index: 6, title: 'Chapter 6', startSeconds: 4333, durationSeconds: 962 },
+    { index: 7, title: 'Chapter 7', startSeconds: 5295, durationSeconds: 1184 },
+    { index: 8, title: 'Chapter 8', startSeconds: 6479, durationSeconds: 1437 },
+    { index: 9, title: 'Chapter 9', startSeconds: 7917, durationSeconds: 1115 },
+    { index: 10, title: 'Chapter 10', startSeconds: 9033, durationSeconds: 921 },
+    { index: 11, title: 'Chapter 11', startSeconds: 9955, durationSeconds: 799 },
+    { index: 12, title: 'Chapter 12', startSeconds: 10755, durationSeconds: 971 },
+    { index: 13, title: 'Chapter 13', startSeconds: 11727, durationSeconds: 1323 },
+    { index: 14, title: 'Chapter 14', startSeconds: 13050, durationSeconds: 1295 },
+    { index: 15, title: 'Chapter 15', startSeconds: 14345, durationSeconds: 1061 },
+    { index: 16, title: 'Chapter 16', startSeconds: 15407, durationSeconds: 1029 },
+    { index: 17, title: 'Chapter 17', startSeconds: 16437, durationSeconds: 1279 },
+    { index: 18, title: 'Chapter 18', startSeconds: 17717, durationSeconds: 969 },
+    { index: 19, title: 'Chapter 19', startSeconds: 18686, durationSeconds: 1023 },
+    { index: 20, title: 'Chapter 20', startSeconds: 19710, durationSeconds: 1164 },
+    { index: 21, title: 'Chapter 21', startSeconds: 20875, durationSeconds: 930 },
+    { index: 22, title: 'Chapter 22', startSeconds: 21805, durationSeconds: 1201 },
+    { index: 23, title: 'Chapter 23', startSeconds: 23006, durationSeconds: 1428 },
+    { index: 24, title: 'Chapter 24', startSeconds: 24435, durationSeconds: 1739 },
+    { index: 25, title: 'Chapter 25', startSeconds: 26174, durationSeconds: 1532 },
+    { index: 26, title: 'Chapter 26', startSeconds: 27706, durationSeconds: 1400 },
+    { index: 27, title: 'Chapter 27', startSeconds: 29107, durationSeconds: 849 },
+    { index: 28, title: 'Chapter 28', startSeconds: 29957, durationSeconds: 1238 },
+    { index: 29, title: 'Chapter 29', startSeconds: 31196, durationSeconds: 989 },
+    { index: 30, title: 'Chapter 30', startSeconds: 32185, durationSeconds: 972 },
+    { index: 31, title: 'Chapter 31', startSeconds: 33158, durationSeconds: 1493 },
+    { index: 32, title: 'Chapter 32', startSeconds: 34651, durationSeconds: 1281 },
+    { index: 33, title: 'Chapter 33', startSeconds: 35933, durationSeconds: 1002 },
+    { index: 34, title: 'Chapter 34', startSeconds: 36935, durationSeconds: 1186 },
+    { index: 35, title: 'Chapter 35', startSeconds: 38122, durationSeconds: 1039 },
+    { index: 36, title: 'Chapter 36', startSeconds: 39162, durationSeconds: 821 },
+    { index: 37, title: 'Chapter 37', startSeconds: 39983, durationSeconds: 1069 },
+    { index: 38, title: 'Chapter 38', startSeconds: 41053, durationSeconds: 371 },
+    { index: 39, title: 'Chapter 39', startSeconds: 41424, durationSeconds: 1119 },
+    { index: 40, title: 'Chapter 40', startSeconds: 42544, durationSeconds: 1037 },
+    { index: 41, title: 'Chapter 41', startSeconds: 43581, durationSeconds: 804 },
+    { index: 42, title: 'Chapter 42', startSeconds: 44386, durationSeconds: 1060 },
+    { index: 43, title: 'Chapter 43', startSeconds: 45446, durationSeconds: 791 },
+    { index: 44, title: 'Chapter 44', startSeconds: 46237, durationSeconds: 849 },
+    { index: 45, title: 'Chapter 45', startSeconds: 47087, durationSeconds: 1125 },
+    { index: 46, title: 'Chapter 46', startSeconds: 48213, durationSeconds: 1168 },
+    { index: 47, title: 'Chapter 47', startSeconds: 49381, durationSeconds: 912 },
+    { index: 48, title: 'Chapter 48', startSeconds: 50294, durationSeconds: 960 },
+    { index: 49, title: 'Chapter 49', startSeconds: 51254, durationSeconds: 1106 },
+    { index: 50, title: 'Chapter 50', startSeconds: 52360, durationSeconds: 1057 },
+    { index: 51, title: 'Chapter 51', startSeconds: 53418, durationSeconds: 788 },
+    { index: 52, title: 'Chapter 52', startSeconds: 54206, durationSeconds: 1047 },
+    { index: 53, title: 'Chapter 53', startSeconds: 55253, durationSeconds: 1305 },
+    { index: 54, title: 'Chapter 54', startSeconds: 56559, durationSeconds: 930 },
+    { index: 55, title: 'Chapter 55', startSeconds: 57489, durationSeconds: 1157 },
+    { index: 56, title: 'Chapter 56', startSeconds: 58647, durationSeconds: 1115 },
+    { index: 57, title: 'Chapter 57', startSeconds: 59763, durationSeconds: 734 },
+    { index: 58, title: 'Chapter 58', startSeconds: 60498, durationSeconds: 1103 },
+    { index: 59, title: 'Chapter 59', startSeconds: 61601, durationSeconds: 1064 },
+    { index: 60, title: 'Chapter 60', startSeconds: 62665, durationSeconds: 921 },
+    { index: 61, title: 'Chapter 61', startSeconds: 63586, durationSeconds: 863 },
+    { index: 62, title: 'Chapter 62', startSeconds: 64450, durationSeconds: 999 },
+    { index: 63, title: 'Chapter 63', startSeconds: 65449, durationSeconds: 1031 },
+    { index: 64, title: 'Chapter 64', startSeconds: 66481, durationSeconds: 1126 },
+    { index: 65, title: 'Chapter 65', startSeconds: 67607, durationSeconds: 1462 },
+    { index: 66, title: 'Chapter 66', startSeconds: 69070, durationSeconds: 935 },
+    { index: 67, title: 'End Credits', startSeconds: 70005, durationSeconds: 42 },
+  ],
 };
 
-// Mage Tank Book 3 - ~25 hours (estimated)
-// 83 chapters
-const MAGE_TANK_3_DURATION = 25 * 3600; // 90,000 seconds
+// Mage Tank Book 3 - 84 chapters, 23h 5m (extracted from M4B)
 export const MAGE_TANK_3: Book = {
   id: 'mage-tank-3',
   title: 'Mage Tank 3',
   author: 'Cornman',
   narrator: 'Daniel Wisniewski',
   coverUrl: '/covers/mage-tank-3.webp',
-  totalDurationSeconds: MAGE_TANK_3_DURATION,
-  chapters: generateChapters(MAGE_TANK_3_DURATION, 83, {
-    hasOpeningCredits: true,
-    hasEpilogue: true,
-    hasEndCharacterSheet: true,
-    hasEndCredits: true,
-  }),
+  totalDurationSeconds: 83127,
+  chapters: [
+    { index: 0, title: 'Opening Credits', startSeconds: 0, durationSeconds: 26 },
+    { index: 1, title: 'Prologue', startSeconds: 26, durationSeconds: 292 },
+    { index: 2, title: 'Chapter 1', startSeconds: 318, durationSeconds: 1351 },
+    { index: 3, title: 'Chapter 2', startSeconds: 1670, durationSeconds: 1102 },
+    { index: 4, title: 'Chapter 3', startSeconds: 2772, durationSeconds: 892 },
+    { index: 5, title: 'Chapter 4', startSeconds: 3664, durationSeconds: 1149 },
+    { index: 6, title: 'Chapter 5', startSeconds: 4814, durationSeconds: 854 },
+    { index: 7, title: 'Chapter 6', startSeconds: 5669, durationSeconds: 938 },
+    { index: 8, title: 'Chapter 7', startSeconds: 6607, durationSeconds: 1266 },
+    { index: 9, title: 'Chapter 8', startSeconds: 7874, durationSeconds: 1182 },
+    { index: 10, title: 'Chapter 9', startSeconds: 9056, durationSeconds: 995 },
+    { index: 11, title: 'Chapter 10', startSeconds: 10051, durationSeconds: 1172 },
+    { index: 12, title: 'Chapter 11', startSeconds: 11223, durationSeconds: 1009 },
+    { index: 13, title: 'Chapter 12', startSeconds: 12233, durationSeconds: 1083 },
+    { index: 14, title: 'Chapter 13', startSeconds: 13317, durationSeconds: 1017 },
+    { index: 15, title: 'Chapter 14', startSeconds: 14334, durationSeconds: 940 },
+    { index: 16, title: 'Chapter 15', startSeconds: 15275, durationSeconds: 863 },
+    { index: 17, title: 'Chapter 16', startSeconds: 16138, durationSeconds: 1012 },
+    { index: 18, title: 'Chapter 17', startSeconds: 17151, durationSeconds: 1100 },
+    { index: 19, title: 'Chapter 18', startSeconds: 18251, durationSeconds: 1179 },
+    { index: 20, title: 'Chapter 19', startSeconds: 19431, durationSeconds: 1254 },
+    { index: 21, title: 'Chapter 20', startSeconds: 20685, durationSeconds: 1183 },
+    { index: 22, title: 'Chapter 21', startSeconds: 21869, durationSeconds: 408 },
+    { index: 23, title: 'Chapter 22', startSeconds: 22277, durationSeconds: 1418 },
+    { index: 24, title: 'Chapter 23', startSeconds: 23695, durationSeconds: 1325 },
+    { index: 25, title: 'Chapter 24', startSeconds: 25021, durationSeconds: 949 },
+    { index: 26, title: 'Chapter 25', startSeconds: 25970, durationSeconds: 1237 },
+    { index: 27, title: 'Chapter 26', startSeconds: 27208, durationSeconds: 1048 },
+    { index: 28, title: 'Chapter 27', startSeconds: 28257, durationSeconds: 1224 },
+    { index: 29, title: 'Chapter 28', startSeconds: 29482, durationSeconds: 1574 },
+    { index: 30, title: 'Chapter 29', startSeconds: 31056, durationSeconds: 232 },
+    { index: 31, title: 'Chapter 30', startSeconds: 31289, durationSeconds: 984 },
+    { index: 32, title: 'Chapter 31', startSeconds: 32273, durationSeconds: 1172 },
+    { index: 33, title: 'Chapter 32', startSeconds: 33446, durationSeconds: 1247 },
+    { index: 34, title: 'Chapter 33', startSeconds: 34693, durationSeconds: 1140 },
+    { index: 35, title: 'Chapter 34', startSeconds: 35834, durationSeconds: 1089 },
+    { index: 36, title: 'Chapter 35', startSeconds: 36924, durationSeconds: 1258 },
+    { index: 37, title: 'Chapter 36', startSeconds: 38182, durationSeconds: 1018 },
+    { index: 38, title: 'Chapter 37', startSeconds: 39200, durationSeconds: 1022 },
+    { index: 39, title: 'Chapter 38', startSeconds: 40223, durationSeconds: 838 },
+    { index: 40, title: 'Chapter 39', startSeconds: 41062, durationSeconds: 941 },
+    { index: 41, title: 'Chapter 40', startSeconds: 42003, durationSeconds: 1164 },
+    { index: 42, title: 'Chapter 41', startSeconds: 43167, durationSeconds: 1185 },
+    { index: 43, title: 'Chapter 42', startSeconds: 44352, durationSeconds: 1264 },
+    { index: 44, title: 'Chapter 43', startSeconds: 45616, durationSeconds: 802 },
+    { index: 45, title: 'Chapter 44', startSeconds: 46419, durationSeconds: 1036 },
+    { index: 46, title: 'Chapter 45', startSeconds: 47456, durationSeconds: 981 },
+    { index: 47, title: 'Chapter 46', startSeconds: 48438, durationSeconds: 927 },
+    { index: 48, title: 'Chapter 47', startSeconds: 49365, durationSeconds: 838 },
+    { index: 49, title: 'Chapter 48', startSeconds: 50203, durationSeconds: 1114 },
+    { index: 50, title: 'Chapter 49', startSeconds: 51318, durationSeconds: 1127 },
+    { index: 51, title: 'Chapter 50', startSeconds: 52445, durationSeconds: 899 },
+    { index: 52, title: 'Chapter 51', startSeconds: 53344, durationSeconds: 704 },
+    { index: 53, title: 'Chapter 52', startSeconds: 54048, durationSeconds: 989 },
+    { index: 54, title: 'Chapter 53', startSeconds: 55038, durationSeconds: 1064 },
+    { index: 55, title: 'Chapter 54', startSeconds: 56103, durationSeconds: 973 },
+    { index: 56, title: 'Chapter 55', startSeconds: 57076, durationSeconds: 1123 },
+    { index: 57, title: 'Chapter 56', startSeconds: 58199, durationSeconds: 916 },
+    { index: 58, title: 'Chapter 57', startSeconds: 59116, durationSeconds: 1087 },
+    { index: 59, title: 'Chapter 58', startSeconds: 60203, durationSeconds: 973 },
+    { index: 60, title: 'Chapter 59', startSeconds: 61177, durationSeconds: 855 },
+    { index: 61, title: 'Chapter 60', startSeconds: 62032, durationSeconds: 930 },
+    { index: 62, title: 'Chapter 61', startSeconds: 62963, durationSeconds: 1202 },
+    { index: 63, title: 'Chapter 62', startSeconds: 64166, durationSeconds: 1182 },
+    { index: 64, title: 'Chapter 63', startSeconds: 65348, durationSeconds: 1385 },
+    { index: 65, title: 'Chapter 64', startSeconds: 66734, durationSeconds: 1144 },
+    { index: 66, title: 'Chapter 65', startSeconds: 67879, durationSeconds: 986 },
+    { index: 67, title: 'Chapter 66', startSeconds: 68865, durationSeconds: 1038 },
+    { index: 68, title: 'Chapter 67', startSeconds: 69903, durationSeconds: 819 },
+    { index: 69, title: 'Chapter 68', startSeconds: 70723, durationSeconds: 1000 },
+    { index: 70, title: 'Chapter 69', startSeconds: 71723, durationSeconds: 893 },
+    { index: 71, title: 'Chapter 70', startSeconds: 72617, durationSeconds: 1006 },
+    { index: 72, title: 'Chapter 71', startSeconds: 73623, durationSeconds: 959 },
+    { index: 73, title: 'Chapter 72', startSeconds: 74583, durationSeconds: 817 },
+    { index: 74, title: 'Chapter 73', startSeconds: 75400, durationSeconds: 1074 },
+    { index: 75, title: 'Chapter 74', startSeconds: 76475, durationSeconds: 927 },
+    { index: 76, title: 'Chapter 75', startSeconds: 77403, durationSeconds: 1024 },
+    { index: 77, title: 'Chapter 76', startSeconds: 78427, durationSeconds: 881 },
+    { index: 78, title: 'Chapter 77', startSeconds: 79309, durationSeconds: 921 },
+    { index: 79, title: 'Chapter 78', startSeconds: 80230, durationSeconds: 948 },
+    { index: 80, title: 'Chapter 79', startSeconds: 81178, durationSeconds: 1221 },
+    { index: 81, title: 'Epilogue', startSeconds: 82399, durationSeconds: 453 },
+    { index: 82, title: 'End Character Sheet', startSeconds: 82853, durationSeconds: 236 },
+    { index: 83, title: 'End Credits', startSeconds: 83089, durationSeconds: 38 },
+  ],
 };
 
 export const MAGE_TANK_BOOKS: Book[] = [MAGE_TANK_1, MAGE_TANK_2, MAGE_TANK_3];
