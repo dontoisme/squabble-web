@@ -186,6 +186,7 @@ export default function BookPage() {
               <NoteTimeline
                 notes={notes}
                 hiddenCount={hiddenCount}
+                guildId={guild?.id}
                 onDeleteNote={handleDeleteNote}
                 deleting={deleting}
               />

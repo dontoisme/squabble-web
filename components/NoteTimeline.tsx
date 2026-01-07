@@ -5,15 +5,34 @@ import { formatTimestamp } from '@/lib/utils/time';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Share2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface NoteTimelineProps {
   notes: NoteWithVisibility[];
   hiddenCount: number;
+  guildId?: string;
   onDeleteNote?: (noteId: string) => void;
   deleting?: boolean;
 }
 
-export function NoteTimeline({ notes, hiddenCount, onDeleteNote, deleting }: NoteTimelineProps) {
+export function NoteTimeline({ notes, hiddenCount, guildId, onDeleteNote, deleting }: NoteTimelineProps) {
+  const copyNoteLink = async (noteId: string) => {
+    if (!guildId) {
+      toast.error('Cannot share note');
+      return;
+    }
+
+    const url = `${window.location.origin}/note/${guildId}/${noteId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copied!');
+    } catch {
+      // Fallback for older browsers
+      toast.error('Failed to copy link');
+    }
+  };
+
   if (notes.length === 0 && hiddenCount === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -80,17 +99,30 @@ export function NoteTimeline({ notes, hiddenCount, onDeleteNote, deleting }: Not
                   {formatRelativeDate(note.createdAt)}
                 </p>
               </div>
-              {note.isOwn && onDeleteNote && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground hover:text-destructive h-8 px-2"
-                  onClick={() => onDeleteNote(note.id)}
-                  disabled={deleting}
-                >
-                  Delete
-                </Button>
-              )}
+              <div className="flex items-center gap-1">
+                {guildId && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => copyNoteLink(note.id)}
+                    title="Copy link to note"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                )}
+                {note.isOwn && onDeleteNote && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-destructive h-8 px-2"
+                    onClick={() => onDeleteNote(note.id)}
+                    disabled={deleting}
+                  >
+                    Delete
+                  </Button>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
