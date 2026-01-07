@@ -110,9 +110,9 @@ export function useGuild() {
         joinedAt: serverTimestamp(),
       });
 
-      // Update user's currentGuildId
+      // Update user's currentGuildId (use setDoc with merge in case doc doesn't exist)
       const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, { currentGuildId: guildId });
+      await setDoc(userRef, { currentGuildId: guildId, email: user.email }, { merge: true });
 
       await refreshUserDoc();
       return guildId;
@@ -164,9 +164,9 @@ export function useGuild() {
         memberCount: increment(1),
       });
 
-      // Update user's currentGuildId
+      // Update user's currentGuildId (use setDoc with merge in case doc doesn't exist)
       const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, { currentGuildId: foundGuildId });
+      await setDoc(userRef, { currentGuildId: foundGuildId, email: user.email }, { merge: true });
 
       await refreshUserDoc();
       return foundGuildId;
@@ -199,9 +199,9 @@ export function useGuild() {
         memberCount: increment(-1),
       });
 
-      // Clear user's currentGuildId
+      // Clear user's currentGuildId (use setDoc with merge in case doc doesn't exist)
       const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, { currentGuildId: null });
+      await setDoc(userRef, { currentGuildId: null, email: user.email }, { merge: true });
 
       await refreshUserDoc();
     } catch (err) {
