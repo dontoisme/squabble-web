@@ -47,16 +47,19 @@ export function useNotes(book: Book | undefined, userProgressSeconds: number) {
       orderBy('timestamp', 'asc')
     );
 
+    console.log('[useNotes] Setting up listener for', { guildId, bookId });
+
     const unsub = onSnapshot(q, (snap) => {
+      console.log('[useNotes] Got snapshot:', snap.docs.length, 'notes');
       const notes = snap.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       })) as Note[];
+      console.log('[useNotes] Parsed notes:', notes);
       setAllNotes(notes);
       setLoading(false);
     }, (error) => {
-      console.error('Notes query error:', error);
-      // If index error, the message will contain a link to create it
+      console.error('[useNotes] Query error:', error);
       if (error.message.includes('index')) {
         console.error('👆 Click the link above to create the required Firestore index');
       }
@@ -80,7 +83,10 @@ export function useNotes(book: Book | undefined, userProgressSeconds: number) {
 
   // Post a new note
   const postNote = useCallback(async (text: string, timestampSeconds: number) => {
+    console.log('[postNote] Starting...', { user: user?.uid, guildId, bookId: book?.id, timestampSeconds });
+
     if (!user || !guildId || !book) {
+      console.error('[postNote] Missing required data:', { user: !!user, guildId, book: !!book });
       throw new Error('Cannot post note');
     }
 
@@ -104,8 +110,16 @@ export function useNotes(book: Book | undefined, userProgressSeconds: number) {
       createdAt: serverTimestamp(),
     };
 
-    const commentsRef = collection(db, 'guilds', guildId, 'comments');
-    await addDoc(commentsRef, noteData);
+    console.log('[postNote] Writing to Firestore:', noteData);
+
+    try {
+      const commentsRef = collection(db, 'guilds', guildId, 'comments');
+      const docRef = await addDoc(commentsRef, noteData);
+      console.log('[postNote] SUCCESS! Doc ID:', docRef.id);
+    } catch (err) {
+      console.error('[postNote] FAILED:', err);
+      throw err;
+    }
   }, [user, guildId, book]);
 
   // Delete own note
