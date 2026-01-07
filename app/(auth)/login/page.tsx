@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -10,12 +10,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +25,7 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password);
-      router.push('/library');
+      router.push(redirect || '/library');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to sign in';
       toast.error(message);
@@ -73,7 +75,7 @@ export default function LoginPage() {
             </Button>
             <p className="text-sm text-muted-foreground">
               Don&apos;t have an account?{' '}
-              <Link href="/signup" className="text-primary hover:underline">
+              <Link href={redirect ? `/signup?redirect=${redirect}` : '/signup'} className="text-primary hover:underline">
                 Sign up
               </Link>
             </p>
@@ -81,5 +83,17 @@ export default function LoginPage() {
         </form>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

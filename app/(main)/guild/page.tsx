@@ -69,6 +69,14 @@ export default function GuildPage() {
     }
   };
 
+  const copyInviteLink = () => {
+    if (guild?.inviteCode) {
+      const url = `${window.location.origin}/invite/${guild.inviteCode}`;
+      navigator.clipboard.writeText(url);
+      toast.success('Invite link copied!');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -95,17 +103,20 @@ export default function GuildPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label className="text-xs text-muted-foreground">Invite Code</Label>
+              <Label className="text-xs text-muted-foreground">Invite Friends</Label>
               <div className="flex items-center gap-2 mt-1">
                 <code className="flex-1 px-3 py-2 bg-muted rounded-md font-mono text-lg tracking-widest">
                   {guild.inviteCode}
                 </code>
                 <Button variant="outline" size="sm" onClick={copyInviteCode}>
-                  Copy
+                  Copy Code
+                </Button>
+                <Button size="sm" onClick={copyInviteLink}>
+                  Copy Link
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Share this code with friends so they can join
+                Share the code or link with friends to invite them
               </p>
             </div>
 
