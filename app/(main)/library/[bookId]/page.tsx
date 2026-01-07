@@ -14,7 +14,20 @@ import { NoteTimeline } from '@/components/NoteTimeline';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { CheckCircle, RotateCcw } from 'lucide-react';
 
 export default function BookPage() {
   const params = useParams();
@@ -52,6 +65,32 @@ export default function BookPage() {
       toast.success('Progress updated!');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update progress';
+      toast.error(message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleMarkComplete = async () => {
+    setUpdating(true);
+    try {
+      await updateProgress(book.totalDurationSeconds);
+      toast.success('Marked as complete!');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to mark complete';
+      toast.error(message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleResetProgress = async () => {
+    setUpdating(true);
+    try {
+      await updateProgress(0);
+      toast.success('Progress reset');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to reset progress';
       toast.error(message);
     } finally {
       setUpdating(false);
@@ -158,18 +197,70 @@ export default function BookPage() {
             {/* Progress card */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Update Progress</CardTitle>
+                <CardTitle className="text-base">Your Progress</CardTitle>
                 <CardDescription>
-                  Select your current chapter and time
+                  {progressPercent >= 100
+                    ? 'You\'ve completed this book!'
+                    : progressPercent > 0
+                      ? `${progressPercent.toFixed(1)}% complete`
+                      : 'Not started yet'}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <ChapterPicker
-                  book={book}
-                  currentSeconds={progressSeconds}
-                  onUpdate={handleUpdateProgress}
-                  disabled={updating || progressLoading}
-                />
+              <CardContent className="space-y-4">
+                {/* Progress indicator */}
+                {progressPercent >= 100 ? (
+                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                    <CheckCircle className="h-5 w-5" />
+                    <span className="font-medium">Complete</span>
+                  </div>
+                ) : (
+                  <ChapterPicker
+                    book={book}
+                    currentSeconds={progressSeconds}
+                    onUpdate={handleUpdateProgress}
+                    disabled={updating || progressLoading}
+                  />
+                )}
+
+                {/* Quick actions */}
+                <div className="flex gap-2 pt-2">
+                  {progressPercent < 100 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleMarkComplete}
+                      disabled={updating}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Mark Complete
+                    </Button>
+                  )}
+
+                  {progressPercent > 0 && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" disabled={updating}>
+                          <RotateCcw className="h-4 w-4 mr-1" />
+                          Reset
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Reset progress?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will set your progress back to 0%. Your notes will remain visible to you.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleResetProgress}>
+                            Reset Progress
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
