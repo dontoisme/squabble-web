@@ -99,8 +99,8 @@ const MAGE_TANK_1_DURATION = 17 * 3600 + 45 * 60; // 63,900 seconds
 export const MAGE_TANK_1: Book = {
   id: 'mage-tank-1',
   title: 'Mage Tank',
-  author: 'Arvin Alvarado',
-  narrator: 'Travis Baldree',
+  author: 'Cornman',
+  narrator: 'Daniel Wisniewski',
   coverUrl: '/covers/mage-tank-1.jpg',
   totalDurationSeconds: MAGE_TANK_1_DURATION,
   chapters: generateChapters(MAGE_TANK_1_DURATION, 70, {
@@ -117,8 +117,8 @@ const MAGE_TANK_2_DURATION = 23 * 3600 + 30 * 60; // 84,600 seconds
 export const MAGE_TANK_2: Book = {
   id: 'mage-tank-2',
   title: 'Mage Tank 2',
-  author: 'Arvin Alvarado',
-  narrator: 'Travis Baldree',
+  author: 'Cornman',
+  narrator: 'Daniel Wisniewski',
   coverUrl: '/covers/mage-tank-2.jpg',
   totalDurationSeconds: MAGE_TANK_2_DURATION,
   chapters: generateChapters(MAGE_TANK_2_DURATION, 67, {
@@ -135,8 +135,8 @@ const MAGE_TANK_3_DURATION = 25 * 3600; // 90,000 seconds
 export const MAGE_TANK_3: Book = {
   id: 'mage-tank-3',
   title: 'Mage Tank 3',
-  author: 'Arvin Alvarado',
-  narrator: 'Travis Baldree',
+  author: 'Cornman',
+  narrator: 'Daniel Wisniewski',
   coverUrl: '/covers/mage-tank-3.jpg',
   totalDurationSeconds: MAGE_TANK_3_DURATION,
   chapters: generateChapters(MAGE_TANK_3_DURATION, 83, {
