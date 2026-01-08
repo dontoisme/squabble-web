@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NOTE_MAX_CHARS } from '@/lib/firebase/types';
 import { Book } from '@/lib/books/types';
 import { secondsToChapter, formatTimestamp, chapterToSeconds, parseTimestamp } from '@/lib/utils/time';
@@ -23,9 +23,16 @@ export function NoteInput({ book, currentProgressSeconds, onPostNote, disabled }
   const [posting, setPosting] = useState(false);
 
   // Default note position to current progress
-  const { chapter, offsetSeconds } = secondsToChapter(book, currentProgressSeconds);
-  const [selectedChapterIndex, setSelectedChapterIndex] = useState(chapter.index);
-  const [offsetInput, setOffsetInput] = useState(formatTimestamp(offsetSeconds));
+  const { chapter: initialChapter, offsetSeconds: initialOffset } = secondsToChapter(book, currentProgressSeconds);
+  const [selectedChapterIndex, setSelectedChapterIndex] = useState(initialChapter.index);
+  const [offsetInput, setOffsetInput] = useState(formatTimestamp(initialOffset));
+
+  // Update defaults when progress changes
+  useEffect(() => {
+    const { chapter, offsetSeconds } = secondsToChapter(book, currentProgressSeconds);
+    setSelectedChapterIndex(chapter.index);
+    setOffsetInput(formatTimestamp(offsetSeconds));
+  }, [book, currentProgressSeconds]);
 
   const charCount = text.length;
   const isOverLimit = charCount > NOTE_MAX_CHARS;
