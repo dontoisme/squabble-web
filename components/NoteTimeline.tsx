@@ -47,28 +47,16 @@ export function NoteTimeline({ notes, hiddenCount, guildId, onDeleteNote, deleti
 
   return (
     <div className="space-y-4">
-      {/* Hidden notes teaser */}
+      {/* Hidden notes teaser - mysterious, no spoilers! */}
       {hiddenNotes.length > 0 && (
         <Card className="border-dashed bg-muted/30">
-          <CardContent className="py-4 text-center">
-            <div className="text-2xl mb-1">
-              {hiddenNotes.length === 1 ? '1 hidden note' : `${hiddenNotes.length} hidden notes`}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Keep listening to reveal them!
+          <CardContent className="py-6 text-center">
+            <p className="text-lg text-muted-foreground italic">
+              Nothing to see here...
             </p>
-            <div className="flex flex-wrap gap-2 justify-center mt-3">
-              {hiddenNotes.slice(0, 5).map((note) => (
-                <Badge key={note.id} variant="outline" className="font-mono text-xs">
-                  @ {formatTimestamp(note.timestamp)}
-                </Badge>
-              ))}
-              {hiddenNotes.length > 5 && (
-                <Badge variant="outline" className="text-xs">
-                  +{hiddenNotes.length - 5} more
-                </Badge>
-              )}
-            </div>
+            <p className="text-sm text-muted-foreground/70 mt-1">
+              👀 or is there?
+            </p>
           </CardContent>
         </Card>
       )}

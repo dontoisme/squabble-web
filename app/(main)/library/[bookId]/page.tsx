@@ -8,10 +8,12 @@ import { formatTimestamp, formatDuration, calculateProgressPercent } from '@/lib
 import { useProgress } from '@/hooks/useProgress';
 import { useNotes } from '@/hooks/useNotes';
 import { useGuild } from '@/hooks/useGuild';
+import { useGuildProgress } from '@/hooks/useGuildProgress';
 import { ChapterPicker } from '@/components/ChapterPicker';
 import { NoteInput } from '@/components/NoteInput';
 import { NoteTimeline } from '@/components/NoteTimeline';
 import { BookCover } from '@/components/BookCover';
+import { ProgressBarWithGhosts } from '@/components/ProgressBarWithGhosts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -35,8 +37,9 @@ export default function BookPage() {
   const bookId = params.bookId as string;
   const book = getBookById(bookId);
 
-  const { hasGuild, guild } = useGuild();
+  const { hasGuild, guild, members } = useGuild();
   const { progress, progressSeconds, updateProgress, loading: progressLoading } = useProgress(book);
+  const { guildProgress } = useGuildProgress(book?.id, members);
   const {
     notes,
     hiddenCount,
@@ -129,19 +132,15 @@ export default function BookPage() {
             <Badge variant="outline">{book.chapters.length} chapters</Badge>
           </div>
 
-          {/* Progress bar */}
+          {/* Progress bar with ghosts */}
           {hasGuild && (
             <div className="mt-4">
-              <div className="flex justify-between text-sm mb-1">
-                <span>{formatTimestamp(progressSeconds)}</span>
-                <span className="text-muted-foreground">{progressPercent.toFixed(1)}%</span>
-              </div>
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
+              <ProgressBarWithGhosts
+                progressSeconds={progressSeconds}
+                progressPercent={progressPercent}
+                totalDurationSeconds={book.totalDurationSeconds}
+                ghosts={guildProgress}
+              />
             </div>
           )}
         </div>
@@ -166,14 +165,7 @@ export default function BookPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr,400px]">
           {/* Notes timeline */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Notes</h2>
-              {hiddenCount > 0 && (
-                <Badge variant="secondary">
-                  {hiddenCount} hidden
-                </Badge>
-              )}
-            </div>
+            <h2 className="text-lg font-semibold">Notes</h2>
 
             {notesLoading ? (
               <div className="text-center py-8 text-muted-foreground animate-pulse">
