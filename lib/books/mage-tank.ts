@@ -1,8 +1,9 @@
 import { Book } from './types';
+import { generateBookIdFromMetadata } from './bookId';
 
 // Mage Tank Book 1 - 74 chapters, 20h 38m (extracted from M4B)
 export const MAGE_TANK_1: Book = {
-  id: 'mage-tank-1',
+  id: generateBookIdFromMetadata('Mage Tank', 'Cornman'),
   title: 'Mage Tank',
   author: 'Cornman',
   narrator: 'Daniel Wisniewski',
@@ -88,7 +89,7 @@ export const MAGE_TANK_1: Book = {
 
 // Mage Tank Book 2 - 68 chapters, 19h 27m (extracted from M4B)
 export const MAGE_TANK_2: Book = {
-  id: 'mage-tank-2',
+  id: generateBookIdFromMetadata('Mage Tank 2', 'Cornman'),
   title: 'Mage Tank 2',
   author: 'Cornman',
   narrator: 'Daniel Wisniewski',
@@ -168,7 +169,7 @@ export const MAGE_TANK_2: Book = {
 
 // Mage Tank Book 3 - 84 chapters, 23h 5m (extracted from M4B)
 export const MAGE_TANK_3: Book = {
-  id: 'mage-tank-3',
+  id: generateBookIdFromMetadata('Mage Tank 3', 'Cornman'),
   title: 'Mage Tank 3',
   author: 'Cornman',
   narrator: 'Daniel Wisniewski',
@@ -264,6 +265,24 @@ export const MAGE_TANK_3: Book = {
 
 export const MAGE_TANK_BOOKS: Book[] = [MAGE_TANK_1, MAGE_TANK_2, MAGE_TANK_3];
 
+// Legacy ID mapping for backwards compatibility with old URLs/bookmarks
+const LEGACY_IDS: Record<string, string> = {
+  'mage-tank-1': MAGE_TANK_1.id,
+  'mage-tank-2': MAGE_TANK_2.id,
+  'mage-tank-3': MAGE_TANK_3.id,
+};
+
 export function getBookById(id: string): Book | undefined {
-  return MAGE_TANK_BOOKS.find(book => book.id === id);
+  // Check if this is a legacy ID and convert it
+  const normalizedId = LEGACY_IDS[id] ?? id;
+  return MAGE_TANK_BOOKS.find(book => book.id === normalizedId);
+}
+
+/**
+ * Get a book by its legacy ID (for migration purposes)
+ */
+export function getBookByLegacyId(legacyId: string): Book | undefined {
+  const newId = LEGACY_IDS[legacyId];
+  if (!newId) return undefined;
+  return MAGE_TANK_BOOKS.find(book => book.id === newId);
 }
