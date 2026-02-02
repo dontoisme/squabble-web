@@ -3,13 +3,12 @@
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getBookById } from '@/lib/books/mage-tank';
-import { formatTimestamp, formatDuration, calculateProgressPercent } from '@/lib/utils/time';
+import { formatTimestamp } from '@/lib/utils/time';
 import { useProgress } from '@/hooks/useProgress';
 import { useNotes } from '@/hooks/useNotes';
 import { useGuild } from '@/hooks/useGuild';
 import { useGuildProgress } from '@/hooks/useGuildProgress';
-import { ChapterPicker } from '@/components/ChapterPicker';
+import { useGuildBook } from '@/hooks/useGuildBooks';
 import { NoteInput } from '@/components/NoteInput';
 import { NoteTimeline } from '@/components/NoteTimeline';
 import { BookCover } from '@/components/BookCover';
@@ -18,6 +17,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,15 +31,19 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { CheckCircle, RotateCcw } from 'lucide-react';
+import { CheckCircle, RotateCcw, BookOpen, Clock, Users } from 'lucide-react';
 
 export default function BookPage() {
   const params = useParams();
   const bookId = params.bookId as string;
-  const book = getBookById(bookId);
 
+  const { book, loading: bookLoading } = useGuildBook(bookId);
   const { hasGuild, guild, members } = useGuild();
-  const { progress, progressSeconds, updateProgress, loading: progressLoading } = useProgress(book);
+
+  // Create a Book-like object for hooks that need it
+  const bookForHooks = book ? { id: book.id, title: book.title, totalDurationSeconds: 0, chapters: [] } : undefined;
+
+  const { progress, progressSeconds, updateProgress, loading: progressLoading } = useProgress(bookForHooks);
   const { guildProgress } = useGuildProgress(book?.id, members);
   const {
     notes,
@@ -46,15 +51,27 @@ export default function BookPage() {
     loading: notesLoading,
     postNote,
     deleteNote,
-  } = useNotes(book, progressSeconds);
+  } = useNotes(bookForHooks, progressSeconds);
 
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [manualProgress, setManualProgress] = useState('');
+
+  if (bookLoading) {
+    return (
+      <div className="text-center py-12 text-muted-foreground animate-pulse">
+        Loading book...
+      </div>
+    );
+  }
 
   if (!book) {
     return (
       <div className="text-center py-12">
         <h1 className="text-2xl font-bold mb-2">Book not found</h1>
+        <p className="text-muted-foreground mb-4">
+          This book may not be in your guild&apos;s library yet.
+        </p>
         <Link href="/library" className="text-primary hover:underline">
           Back to library
         </Link>
@@ -62,10 +79,11 @@ export default function BookPage() {
     );
   }
 
-  const handleUpdateProgress = async (seconds: number) => {
+  const handleUpdateProgress = async (percent: number) => {
     setUpdating(true);
     try {
-      await updateProgress(seconds);
+      // Convert percent to approximate seconds (we don't have total duration)
+      await updateProgress(percent * 100); // Store as percent * 100 for now
       toast.success('Progress updated!');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update progress';
@@ -75,30 +93,25 @@ export default function BookPage() {
     }
   };
 
-  const handleMarkComplete = async () => {
-    setUpdating(true);
-    try {
-      await updateProgress(book.totalDurationSeconds);
-      toast.success('Marked as complete!');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to mark complete';
-      toast.error(message);
-    } finally {
-      setUpdating(false);
+  const handleManualProgressSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const percent = parseFloat(manualProgress);
+    if (isNaN(percent) || percent < 0 || percent > 100) {
+      toast.error('Please enter a valid percentage (0-100)');
+      return;
     }
+    await handleUpdateProgress(percent / 100);
+    setManualProgress('');
+  };
+
+  const handleMarkComplete = async () => {
+    await handleUpdateProgress(1); // 100%
+    toast.success('Marked as complete!');
   };
 
   const handleResetProgress = async () => {
-    setUpdating(true);
-    try {
-      await updateProgress(0);
-      toast.success('Progress reset');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to reset progress';
-      toast.error(message);
-    } finally {
-      setUpdating(false);
-    }
+    await handleUpdateProgress(0);
+    toast.success('Progress reset');
   };
 
   const handleDeleteNote = async (noteId: string) => {
@@ -114,31 +127,58 @@ export default function BookPage() {
     }
   };
 
-  const progressPercent = calculateProgressPercent(progressSeconds, book.totalDurationSeconds);
+  // Calculate progress from memberOwnership if available
+  const currentUserId = guild?.createdBy; // TODO: Get actual current user ID
+  const userOwnership = currentUserId ? book.memberOwnership[currentUserId] : null;
+  const progressPercent = userOwnership?.progressPercent ?? 0;
+
+  // Ownership stats
+  const ownershipCount = Object.values(book.memberOwnership).filter(
+    (o) => o.hasBook || (o.progressPercent !== undefined && o.progressPercent > 0)
+  ).length;
+  const totalMembers = Object.keys(book.memberOwnership).length;
 
   return (
     <div className="space-y-6">
       {/* Book Header */}
       <div className="flex gap-6">
-        <BookCover title={book.title} coverUrl={book.coverUrl} size="md" />
+        <BookCover title={book.title} size="md" />
         <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            {book.status === 'reading' && (
+              <Badge variant="default" className="bg-primary text-primary-foreground">
+                <BookOpen className="w-3 h-3 mr-1" />
+                Reading
+              </Badge>
+            )}
+            {book.status === 'finished' && (
+              <Badge variant="secondary" className="text-[#4CAF50]">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Finished
+              </Badge>
+            )}
+            {book.status === 'queued' && (
+              <Badge variant="outline">
+                <Clock className="w-3 h-3 mr-1" />
+                Queued #{book.queuePosition}
+              </Badge>
+            )}
+          </div>
           <h1 className="text-2xl font-bold">{book.title}</h1>
-          <p className="text-muted-foreground">{book.author}</p>
-          {book.narrator && (
-            <p className="text-sm text-muted-foreground">Narrated by {book.narrator}</p>
-          )}
-          <div className="flex gap-2 mt-2">
-            <Badge variant="outline">{formatDuration(book.totalDurationSeconds)}</Badge>
-            <Badge variant="outline">{book.chapters.length} chapters</Badge>
+          {book.author && <p className="text-muted-foreground">{book.author}</p>}
+
+          <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+            <Users className="w-4 h-4" />
+            <span>{ownershipCount}/{totalMembers} guild members have this book</span>
           </div>
 
           {/* Progress bar with ghosts */}
           {hasGuild && (
             <div className="mt-4">
               <ProgressBarWithGhosts
-                progressSeconds={progressSeconds}
+                progressSeconds={progressPercent}
                 progressPercent={progressPercent}
-                totalDurationSeconds={book.totalDurationSeconds}
+                totalDurationSeconds={100}
                 ghosts={guildProgress}
               />
             </div>
@@ -197,20 +237,28 @@ export default function BookPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Progress indicator */}
-                {progressPercent >= 100 ? (
-                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                    <CheckCircle className="h-5 w-5" />
-                    <span className="font-medium">Complete</span>
+                {/* Manual progress entry */}
+                <form onSubmit={handleManualProgressSubmit} className="space-y-2">
+                  <Label htmlFor="progress" className="text-xs text-muted-foreground">
+                    Update progress (%)
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="progress"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      placeholder="0-100"
+                      value={manualProgress}
+                      onChange={(e) => setManualProgress(e.target.value)}
+                      className="font-mono"
+                    />
+                    <Button type="submit" disabled={updating || !manualProgress}>
+                      Update
+                    </Button>
                   </div>
-                ) : (
-                  <ChapterPicker
-                    book={book}
-                    currentSeconds={progressSeconds}
-                    onUpdate={handleUpdateProgress}
-                    disabled={updating || progressLoading}
-                  />
-                )}
+                </form>
 
                 {/* Quick actions */}
                 <div className="flex gap-2 pt-2">
@@ -258,8 +306,8 @@ export default function BookPage() {
 
             {/* Note input */}
             <NoteInput
-              book={book}
-              currentProgressSeconds={progressSeconds}
+              book={{ id: book.id, title: book.title, totalDurationSeconds: 0, chapters: [] }}
+              currentProgressSeconds={progressPercent}
               onPostNote={postNote}
               disabled={!hasGuild}
             />

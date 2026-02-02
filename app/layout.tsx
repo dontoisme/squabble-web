@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Squabble - Audiobook Notes",
-  description: "Leave hidden notes for your friends as they listen",
+  title: "Squabble Inn - Guild Audiobook Companion",
+  description: "Track progress and share notes with your audiobook guild",
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

@@ -11,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { BookCover } from '@/components/BookCover';
-import { getBookById } from '@/lib/books/mage-tank';
 import { MessageSquare, BookOpen, Clock, User } from 'lucide-react';
 
 export default function NotePage() {
@@ -93,7 +92,6 @@ export default function NotePage() {
               {/* Book cover */}
               <BookCover
                 title={note.bookTitle}
-                coverUrl={getBookById(note.bookId)?.coverUrl}
                 size="sm"
               />
 
