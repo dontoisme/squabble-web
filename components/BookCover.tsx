@@ -75,6 +75,16 @@ export function BookCover({
 
   const effectiveCoverUrl = coverUrl || fetchedCoverUrl;
 
+  // Debug logging
+  console.log(`[BookCover] "${title}"`, {
+    coverUrl: coverUrl ? '✓ from prop' : '✗ no prop',
+    fetchedCoverUrl: fetchedCoverUrl ? '✓ fetched' : '✗ not fetched',
+    shouldFetch,
+    autoFetch,
+    loading,
+    hasCallback: !!onCoverFetched,
+  });
+
   // Reset image loaded state when URL changes
   useEffect(() => {
     setImageLoaded(false);
@@ -82,10 +92,17 @@ export function BookCover({
 
   // Notify parent when a cover is fetched (for persisting to database)
   useEffect(() => {
+    console.log(`[BookCover] "${title}" backfill check:`, {
+      fetchedCoverUrl: !!fetchedCoverUrl,
+      coverUrl: !!coverUrl,
+      onCoverFetched: !!onCoverFetched,
+      willBackfill: !!(fetchedCoverUrl && !coverUrl && onCoverFetched),
+    });
     if (fetchedCoverUrl && !coverUrl && onCoverFetched) {
+      console.log(`[BookCover] "${title}" CALLING onCoverFetched with:`, fetchedCoverUrl);
       onCoverFetched(fetchedCoverUrl);
     }
-  }, [fetchedCoverUrl, coverUrl, onCoverFetched]);
+  }, [fetchedCoverUrl, coverUrl, onCoverFetched, title]);
 
   // Show image immediately if coverUrl prop is provided (no hydration mismatch possible)
   // Only wait for mount when using fetched/cached URL (to avoid hydration mismatch with sessionStorage)

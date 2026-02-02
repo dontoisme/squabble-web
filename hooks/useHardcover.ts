@@ -164,23 +164,32 @@ export function useCachedCover(title: string, author?: string) {
   const [coverUrl, setCoverUrl] = useState<string | null>(() => {
     if (!cacheKey) return null;
     const cached = getFromCache(cacheKey);
+    console.log(`[useCachedCover] "${title}" init from cache:`, cached !== undefined ? 'HIT' : 'MISS');
     return cached !== undefined ? cached : null;
   });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!title) return;
+    if (!title) {
+      console.log('[useCachedCover] No title, skipping');
+      return;
+    }
 
     // Check cache again (might have been populated by another component)
     const cached = getFromCache(cacheKey);
     if (cached !== undefined) {
+      console.log(`[useCachedCover] "${title}" cache HIT in effect:`, cached);
       setCoverUrl(cached);
       return;
     }
 
     // Already fetching this one
-    if (fetchingSet.has(cacheKey)) return;
+    if (fetchingSet.has(cacheKey)) {
+      console.log(`[useCachedCover] "${title}" already fetching, skipping`);
+      return;
+    }
 
+    console.log(`[useCachedCover] "${title}" FETCHING from API...`);
     fetchingSet.add(cacheKey);
     setLoading(true);
 
@@ -191,10 +200,12 @@ export function useCachedCover(title: string, author?: string) {
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
         const url = data?.book?.coverUrl || null;
+        console.log(`[useCachedCover] "${title}" API response:`, url ? 'GOT URL' : 'NO URL', url);
         saveToCache(cacheKey, url);
         setCoverUrl(url);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error(`[useCachedCover] "${title}" API error:`, err);
         saveToCache(cacheKey, null);
         setCoverUrl(null);
       })
