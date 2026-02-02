@@ -3,12 +3,15 @@
 import Link from 'next/link';
 import { useGuildBooks, GuildBook } from '@/hooks/useGuildBooks';
 import { useGuild } from '@/hooks/useGuild';
+import { useHardcoverToken } from '@/hooks/useHardcover';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BookCover } from '@/components/BookCover';
+import { BookSearch } from '@/components/BookSearch';
+import { HardcoverSettings } from '@/components/HardcoverSettings';
 import { Library, BookOpen, CheckCircle, Clock } from 'lucide-react';
 
-function BookCard({ book }: { book: GuildBook }) {
+function BookCard({ book, autoFetchCover = false }: { book: GuildBook; autoFetchCover?: boolean }) {
   const ownershipCount = Object.values(book.memberOwnership).filter(
     (o) => o.hasBook || (o.progressPercent !== undefined && o.progressPercent > 0)
   ).length;
@@ -19,7 +22,12 @@ function BookCard({ book }: { book: GuildBook }) {
       <Card className="h-full hover:bg-muted/50 transition-colors cursor-pointer">
         <CardHeader className="pb-2">
           <div className="flex justify-center mb-3">
-            <BookCover title={book.title} size="lg" />
+            <BookCover
+              title={book.title}
+              author={book.author}
+              size="lg"
+              autoFetch={autoFetchCover}
+            />
           </div>
           <div className="flex items-center gap-2">
             {book.status === 'reading' && (
@@ -92,6 +100,7 @@ function NoGuildPrompt() {
 export default function LibraryPage() {
   const { hasGuild } = useGuild();
   const { books, currentBook, queuedBooks, finishedBooks, loading, hasBooks } = useGuildBooks();
+  const { hasToken: hasHardcoverToken } = useHardcoverToken();
 
   return (
     <div className="space-y-6">
@@ -101,6 +110,10 @@ export default function LibraryPage() {
           <p className="text-muted-foreground">
             Your guild&apos;s shared book collection
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <HardcoverSettings />
+          {hasGuild && hasHardcoverToken && <BookSearch />}
         </div>
       </div>
 
@@ -124,7 +137,7 @@ export default function LibraryPage() {
                 Currently Reading
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <BookCard book={currentBook} />
+                <BookCard book={currentBook} autoFetchCover={hasHardcoverToken} />
               </div>
             </section>
           )}
@@ -138,7 +151,7 @@ export default function LibraryPage() {
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {queuedBooks.map((book) => (
-                  <BookCard key={book.id} book={book} />
+                  <BookCard key={book.id} book={book} autoFetchCover={hasHardcoverToken} />
                 ))}
               </div>
             </section>
@@ -153,7 +166,7 @@ export default function LibraryPage() {
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {finishedBooks.map((book) => (
-                  <BookCard key={book.id} book={book} />
+                  <BookCard key={book.id} book={book} autoFetchCover={hasHardcoverToken} />
                 ))}
               </div>
             </section>

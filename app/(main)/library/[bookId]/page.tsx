@@ -9,6 +9,7 @@ import { useNotes } from '@/hooks/useNotes';
 import { useGuild } from '@/hooks/useGuild';
 import { useGuildProgress } from '@/hooks/useGuildProgress';
 import { useGuildBook } from '@/hooks/useGuildBooks';
+import { useHardcoverToken } from '@/hooks/useHardcover';
 import { NoteInput } from '@/components/NoteInput';
 import { NoteTimeline } from '@/components/NoteTimeline';
 import { BookCover } from '@/components/BookCover';
@@ -39,6 +40,7 @@ export default function BookPage() {
 
   const { book, loading: bookLoading } = useGuildBook(bookId);
   const { hasGuild, guild, members } = useGuild();
+  const { hasToken: hasHardcoverToken } = useHardcoverToken();
 
   // Create a Book-like object for hooks that need it
   const bookForHooks = book ? { id: book.id, title: book.title, totalDurationSeconds: 0, chapters: [] } : undefined;
@@ -142,7 +144,7 @@ export default function BookPage() {
     <div className="space-y-6">
       {/* Book Header */}
       <div className="flex gap-6">
-        <BookCover title={book.title} size="md" />
+        <BookCover title={book.title} author={book.author} size="md" autoFetch={hasHardcoverToken} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             {book.status === 'reading' && (
