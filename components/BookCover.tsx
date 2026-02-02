@@ -139,7 +139,13 @@ export function BookCover({
           src={effectiveCoverUrl}
           alt={title}
           fill
-          className={`object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+          // Skip fade-in transition when coverUrl comes from props (already cached)
+          // Only use transition when actively fetching (shouldFetch was true)
+          className={`object-cover ${
+            coverUrl
+              ? 'opacity-100' // Immediate display for prop-provided URLs
+              : `transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}` // Fade-in for fetched URLs
+          }`}
           onLoad={() => {
             console.log(`[BookCover] "${title}" IMAGE LOADED`);
             setImageLoaded(true);
