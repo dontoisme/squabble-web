@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useCachedCover } from '@/hooks/useHardcover';
 
@@ -53,8 +53,15 @@ export function BookCover({
   autoFetch = false,
 }: BookCoverProps) {
   const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const colorClass = getTitleColor(title);
   const bookNumber = getBookNumber(title);
+
+  // Track client-side mount to avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Only fetch from Hardcover if autoFetch is enabled and no coverUrl provided
   const shouldFetch = autoFetch && !coverUrl;
@@ -64,47 +71,56 @@ export function BookCover({
   );
 
   const effectiveCoverUrl = coverUrl || fetchedCoverUrl;
-  const showPlaceholder = !effectiveCoverUrl || imageError;
+
+  // Reset image loaded state when URL changes
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [effectiveCoverUrl]);
+  // Only show image after mount to prevent hydration flash
+  const hasImage = mounted && effectiveCoverUrl && !imageError;
 
   return (
     <div className={`${sizeClasses[size]} ${className} relative rounded-lg overflow-hidden shadow-md shrink-0`}>
-      {showPlaceholder ? (
-        <div className={`w-full h-full bg-gradient-to-br ${colorClass} flex flex-col items-center justify-center p-2`}>
-          {/* Decorative top bar */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-white/20" />
+      {/* Always render placeholder as background */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${colorClass} flex flex-col items-center justify-center p-2`}>
+        {/* Decorative top bar */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-white/20" />
 
-          {/* Loading indicator */}
-          {loading && (
-            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-              <div className="w-6 h-6 border-2 border-white/30 border-t-white/80 rounded-full animate-spin" />
-            </div>
-          )}
-
-          {/* Book number or icon */}
-          {bookNumber ? (
-            <div className="text-white/90 font-bold text-4xl mb-1">
-              {bookNumber}
-            </div>
-          ) : (
-            <div className="text-white/80 text-3xl mb-2">
-              📖
-            </div>
-          )}
-
-          {/* Title */}
-          <div className="text-white/90 text-xs font-medium text-center leading-tight line-clamp-3 px-1">
-            {title.replace(/\s*\d+$/, '')}
+        {/* Loading indicator - show when fetching or when image is loading */}
+        {(loading || (hasImage && !imageLoaded)) && (
+          <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-10">
+            <div className="w-6 h-6 border-2 border-white/30 border-t-white/80 rounded-full animate-spin" />
           </div>
+        )}
 
-          {/* Decorative spine effect */}
-          <div className="absolute left-0 top-0 bottom-0 w-2 bg-black/20" />
+        {/* Book number or icon */}
+        {bookNumber ? (
+          <div className="text-white/90 font-bold text-4xl mb-1">
+            {bookNumber}
+          </div>
+        ) : (
+          <div className="text-white/80 text-3xl mb-2">
+            📖
+          </div>
+        )}
+
+        {/* Title */}
+        <div className="text-white/90 text-xs font-medium text-center leading-tight line-clamp-3 px-1">
+          {title.replace(/\s*\d+$/, '')}
         </div>
-      ) : (
+
+        {/* Decorative spine effect */}
+        <div className="absolute left-0 top-0 bottom-0 w-2 bg-black/20" />
+      </div>
+
+      {/* Image overlays placeholder and fades in when loaded */}
+      {hasImage && (
         <Image
           src={effectiveCoverUrl}
           alt={title}
           fill
-          className="object-cover"
+          className={`object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={() => setImageLoaded(true)}
           onError={() => setImageError(true)}
           unoptimized // External images from Hardcover
         />

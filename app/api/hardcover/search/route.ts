@@ -21,6 +21,19 @@ interface HardcoverSearchResult {
   };
 }
 
+interface MappedBook {
+  hardcoverId: number;
+  title: string;
+  author: string | null;
+  series: string | null;
+  seriesPosition: number | null;
+  seriesBooksCount: number | null;
+  coverUrl: string | null;
+  audioDurationSeconds: number | null;
+  popularity: number;
+  hasAudiobook: boolean;
+}
+
 const SEARCH_QUERY = `
   query SearchBooks($query: String!) {
     search(
@@ -106,7 +119,7 @@ export async function GET(request: NextRequest) {
       }));
 
     // Sort: Book 1s first within same series, then by original relevance
-    books.sort((a, b) => {
+    books.sort((a: MappedBook, b: MappedBook) => {
       // If same series, sort by position
       if (a.series && b.series && a.series === b.series) {
         return (a.seriesPosition || 999) - (b.seriesPosition || 999);
