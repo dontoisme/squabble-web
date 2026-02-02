@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { BookCover } from '@/components/BookCover';
 import { BookSearch } from '@/components/BookSearch';
-import { HardcoverSettings } from '@/components/HardcoverSettings';
 import { Library, BookOpen, CheckCircle, Clock } from 'lucide-react';
 
 function BookCard({ book, autoFetchCover = false }: { book: GuildBook; autoFetchCover?: boolean }) {
@@ -111,10 +110,7 @@ export default function LibraryPage() {
             Your guild&apos;s shared book collection
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <HardcoverSettings />
-          {hasGuild && hasHardcoverToken && <BookSearch />}
-        </div>
+        {hasGuild && hasHardcoverToken && <BookSearch />}
       </div>
 
       {!hasGuild && <NoGuildPrompt />}

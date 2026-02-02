@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+// Load shared env file from parent directory
+config({ path: resolve(process.cwd(), '../.env.shared') });
 
 const HARDCOVER_API = 'https://api.hardcover.app/v1/graphql';
 
@@ -29,14 +34,16 @@ const SEARCH_QUERY = `
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get('q');
-  const token = request.headers.get('x-hardcover-token');
+
+  // Use server-side env var (no client token needed)
+  const token = process.env.HARDCOVER_API_TOKEN;
 
   if (!query) {
     return NextResponse.json({ error: 'Missing query parameter' }, { status: 400 });
   }
 
-  if (!token) {
-    return NextResponse.json({ error: 'Missing Hardcover API token' }, { status: 401 });
+  if (!token || token === 'your_token_here') {
+    return NextResponse.json({ error: 'Hardcover API token not configured on server' }, { status: 401 });
   }
 
   try {

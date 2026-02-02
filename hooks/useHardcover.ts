@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 export interface HardcoverBook {
   hardcoverId: number;
@@ -13,36 +13,33 @@ export interface HardcoverBook {
   hasAudiobook: boolean;
 }
 
-const HARDCOVER_TOKEN_KEY = 'squabble_hardcover_token';
-
 /**
- * Hook for managing Hardcover API token
+ * Check if Hardcover API is configured on the server
+ * Token is now stored in server-side .env.shared, not localStorage
  */
 export function useHardcoverToken() {
-  const [token, setTokenState] = useState<string | null>(null);
+  const [isConfigured, setIsConfigured] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  // Load token from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(HARDCOVER_TOKEN_KEY);
-    setTokenState(stored);
-    setLoaded(true);
-  }, []);
-
-  const setToken = useCallback((newToken: string | null) => {
-    if (newToken) {
-      localStorage.setItem(HARDCOVER_TOKEN_KEY, newToken);
-    } else {
-      localStorage.removeItem(HARDCOVER_TOKEN_KEY);
-    }
-    setTokenState(newToken);
+    fetch('/api/hardcover/status')
+      .then((res) => res.json())
+      .then((data) => {
+        setIsConfigured(data.configured);
+        setLoaded(true);
+      })
+      .catch(() => {
+        setIsConfigured(false);
+        setLoaded(true);
+      });
   }, []);
 
   return {
-    token,
-    setToken,
-    hasToken: !!token,
+    hasToken: isConfigured,
     loaded,
+    // Kept for API compatibility but no longer used
+    token: null,
+    setToken: () => {},
   };
 }
 
@@ -50,7 +47,7 @@ export function useHardcoverToken() {
  * Hook for searching Hardcover
  */
 export function useHardcoverSearch() {
-  const { token, hasToken } = useHardcoverToken();
+  const { hasToken } = useHardcoverToken();
   const [results, setResults] = useState<HardcoverBook[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,20 +58,11 @@ export function useHardcoverSearch() {
       return;
     }
 
-    if (!token) {
-      setError('Hardcover API token not configured');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(`/api/hardcover/search?q=${encodeURIComponent(query)}`, {
-        headers: {
-          'x-hardcover-token': token,
-        },
-      });
+      const response = await fetch(`/api/hardcover/search?q=${encodeURIComponent(query)}`);
 
       if (!response.ok) {
         const data = await response.json();
@@ -90,7 +78,7 @@ export function useHardcoverSearch() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   const clearResults = useCallback(() => {
     setResults([]);
@@ -111,20 +99,12 @@ export function useHardcoverSearch() {
  * Hook for looking up a single book's cover
  */
 export function useBookCoverLookup() {
-  const { token } = useHardcoverToken();
-
   const lookupCover = useCallback(async (title: string, author?: string): Promise<string | null> => {
-    if (!token) return null;
-
     try {
       const params = new URLSearchParams({ title });
       if (author) params.set('author', author);
 
-      const response = await fetch(`/api/hardcover/lookup?${params}`, {
-        headers: {
-          'x-hardcover-token': token,
-        },
-      });
+      const response = await fetch(`/api/hardcover/lookup?${params}`);
 
       if (!response.ok) return null;
 
@@ -133,7 +113,7 @@ export function useBookCoverLookup() {
     } catch {
       return null;
     }
-  }, [token]);
+  }, []);
 
   return { lookupCover };
 }
@@ -145,12 +125,12 @@ const coverCache = new Map<string, string | null>();
  * Hook for getting a book cover with caching
  */
 export function useCachedCover(title: string, author?: string) {
-  const { token } = useHardcoverToken();
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    if (!token || !title) return;
+    if (!title) return;
 
     const cacheKey = `${title}|${author || ''}`;
 
@@ -160,16 +140,16 @@ export function useCachedCover(title: string, author?: string) {
       return;
     }
 
+    // Prevent duplicate fetches in strict mode
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
     setLoading(true);
 
     const params = new URLSearchParams({ title });
     if (author) params.set('author', author);
 
-    fetch(`/api/hardcover/lookup?${params}`, {
-      headers: {
-        'x-hardcover-token': token,
-      },
-    })
+    fetch(`/api/hardcover/lookup?${params}`)
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
         const url = data?.book?.coverUrl || null;
@@ -181,7 +161,7 @@ export function useCachedCover(title: string, author?: string) {
         setCoverUrl(null);
       })
       .finally(() => setLoading(false));
-  }, [token, title, author]);
+  }, [title, author]);
 
   return { coverUrl, loading };
 }
