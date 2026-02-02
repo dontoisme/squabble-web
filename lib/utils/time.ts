@@ -19,7 +19,7 @@ export function chapterToSeconds(
 export function secondsToChapter(
   book: Book,
   totalSeconds: number
-): { chapter: Chapter; offsetSeconds: number } {
+): { chapter: Chapter; offsetSeconds: number } | null {
   // Find the chapter that contains this timestamp
   for (let i = book.chapters.length - 1; i >= 0; i--) {
     const chapter = book.chapters[i];
@@ -30,9 +30,13 @@ export function secondsToChapter(
       };
     }
   }
-  // Default to first chapter
+  // Default to first chapter (or null if no chapters)
+  const firstChapter = book.chapters[0];
+  if (!firstChapter) {
+    return null;
+  }
   return {
-    chapter: book.chapters[0],
+    chapter: firstChapter,
     offsetSeconds: 0,
   };
 }

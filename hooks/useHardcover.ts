@@ -120,30 +120,33 @@ export function useBookCoverLookup() {
 
 // Cache for cover URLs to avoid repeated lookups
 const coverCache = new Map<string, string | null>();
+// Track in-flight fetches to prevent duplicates
+const fetchingSet = new Set<string>();
 
 /**
  * Hook for getting a book cover with caching
  */
 export function useCachedCover(title: string, author?: string) {
-  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const cacheKey = title ? `${title}|${author || ''}` : '';
+
+  // Initialize from cache synchronously to prevent flicker
+  const cachedValue = cacheKey ? coverCache.get(cacheKey) : undefined;
+  const [coverUrl, setCoverUrl] = useState<string | null>(cachedValue ?? null);
   const [loading, setLoading] = useState(false);
-  const fetchedRef = useRef(false);
 
   useEffect(() => {
     if (!title) return;
 
-    const cacheKey = `${title}|${author || ''}`;
-
-    // Check cache first
+    // Already have cached value
     if (coverCache.has(cacheKey)) {
       setCoverUrl(coverCache.get(cacheKey) || null);
       return;
     }
 
-    // Prevent duplicate fetches in strict mode
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
+    // Already fetching this one
+    if (fetchingSet.has(cacheKey)) return;
 
+    fetchingSet.add(cacheKey);
     setLoading(true);
 
     const params = new URLSearchParams({ title });
@@ -160,8 +163,11 @@ export function useCachedCover(title: string, author?: string) {
         coverCache.set(cacheKey, null);
         setCoverUrl(null);
       })
-      .finally(() => setLoading(false));
-  }, [title, author]);
+      .finally(() => {
+        fetchingSet.delete(cacheKey);
+        setLoading(false);
+      });
+  }, [title, author, cacheKey]);
 
   return { coverUrl, loading };
 }
