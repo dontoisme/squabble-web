@@ -1,9 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { config } from 'dotenv';
-import { resolve } from 'path';
-
-// Load shared env file from parent directory
-config({ path: resolve(process.cwd(), '../.env.shared') });
 
 const HARDCOVER_API = 'https://api.hardcover.app/v1/graphql';
 
@@ -39,7 +34,9 @@ export async function GET(request: NextRequest) {
   const author = searchParams.get('author');
 
   // Use server-side env var (no client token needed)
-  const token = process.env.HARDCOVER_API_TOKEN;
+  // Strip "Bearer " prefix if present (we add it ourselves)
+  const rawToken = process.env.HARDCOVER_API_TOKEN;
+  const token = rawToken?.replace(/^Bearer\s+/i, '');
 
   if (!title) {
     return NextResponse.json({ error: 'Missing title parameter' }, { status: 400 });
@@ -81,14 +78,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const rawResults = data.data?.search?.results || [];
-    const results: HardcoverSearchResult[] = typeof rawResults === 'string'
-      ? JSON.parse(rawResults)
-      : rawResults;
+    // Parse the results - they come as { hits: [{ document: {...} }] }
+    const searchResults = data.data?.search?.results;
+    const hits = searchResults?.hits || [];
 
-    if (results.length === 0) {
+    if (hits.length === 0) {
       return NextResponse.json({ book: null });
     }
+
+    // Extract documents from hits
+    const results: HardcoverSearchResult[] = hits.map((hit: { document: HardcoverSearchResult }) => hit.document);
 
     // Find best match - prefer audiobooks and title match
     const normalizedTitle = title.toLowerCase().trim();
@@ -110,7 +109,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       book: {
-        hardcoverId: bestMatch.id,
+        hardcoverId: parseInt(bestMatch.id as unknown as string, 10),
         title: bestMatch.title,
         author: bestMatch.author_names?.[0] || null,
         coverUrl: bestMatch.image?.url || null,

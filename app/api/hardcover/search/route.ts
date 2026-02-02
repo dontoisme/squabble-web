@@ -1,9 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { config } from 'dotenv';
-import { resolve } from 'path';
-
-// Load shared env file from parent directory
-config({ path: resolve(process.cwd(), '../.env.shared') });
 
 const HARDCOVER_API = 'https://api.hardcover.app/v1/graphql';
 
@@ -36,7 +31,9 @@ export async function GET(request: NextRequest) {
   const query = searchParams.get('q');
 
   // Use server-side env var (no client token needed)
-  const token = process.env.HARDCOVER_API_TOKEN;
+  // Strip "Bearer " prefix if present (we add it ourselves)
+  const rawToken = process.env.HARDCOVER_API_TOKEN;
+  const token = rawToken?.replace(/^Bearer\s+/i, '');
 
   if (!query) {
     return NextResponse.json({ error: 'Missing query parameter' }, { status: 400 });
@@ -78,20 +75,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Parse the results (they come as a JSON string in 'results')
-    const rawResults = data.data?.search?.results || [];
+    // Parse the results - they come as { hits: [{ document: {...} }] }
+    const searchResults = data.data?.search?.results;
+    const hits = searchResults?.hits || [];
 
-    // Hardcover returns results as JSON strings that need parsing
-    const books = (typeof rawResults === 'string' ? JSON.parse(rawResults) : rawResults).map((book: HardcoverSearchResult) => ({
-      hardcoverId: book.id,
-      title: book.title,
-      author: book.author_names?.[0] || null,
-      series: book.series_names?.[0] || null,
-      coverUrl: book.image?.url || null,
-      audioDurationSeconds: book.audio_seconds || null,
-      popularity: book.users_read_count || 0,
-      hasAudiobook: (book.audio_seconds || 0) > 0,
-    }));
+    const books = hits.map((hit: { document: HardcoverSearchResult }) => {
+      const book = hit.document;
+      return {
+        hardcoverId: parseInt(book.id as unknown as string, 10),
+        title: book.title,
+        author: book.author_names?.[0] || null,
+        series: book.series_names?.[0] || null,
+        coverUrl: book.image?.url || null,
+        audioDurationSeconds: book.audio_seconds || null,
+        popularity: book.users_read_count || 0,
+        hasAudiobook: (book.audio_seconds || 0) > 0,
+      };
+    });
 
     return NextResponse.json({ books });
   } catch (error) {
