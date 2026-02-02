@@ -76,14 +76,7 @@ export function BookCover({
   const effectiveCoverUrl = coverUrl || fetchedCoverUrl;
 
   // Debug logging
-  console.log(`[BookCover] "${title}"`, {
-    coverUrl: coverUrl ? '✓ from prop' : '✗ no prop',
-    fetchedCoverUrl: fetchedCoverUrl ? '✓ fetched' : '✗ not fetched',
-    shouldFetch,
-    autoFetch,
-    loading,
-    hasCallback: !!onCoverFetched,
-  });
+  console.log(`[BookCover] "${title}" | coverUrl=${coverUrl ? coverUrl.substring(0, 50) + '...' : 'NONE'} | fetchedUrl=${fetchedCoverUrl ? 'YES' : 'NONE'} | shouldFetch=${shouldFetch} | autoFetch=${autoFetch} | hasCallback=${!!onCoverFetched}`);
 
   // Reset image loaded state when URL changes
   useEffect(() => {
@@ -92,15 +85,11 @@ export function BookCover({
 
   // Notify parent when a cover is fetched (for persisting to database)
   useEffect(() => {
-    console.log(`[BookCover] "${title}" backfill check:`, {
-      fetchedCoverUrl: !!fetchedCoverUrl,
-      coverUrl: !!coverUrl,
-      onCoverFetched: !!onCoverFetched,
-      willBackfill: !!(fetchedCoverUrl && !coverUrl && onCoverFetched),
-    });
-    if (fetchedCoverUrl && !coverUrl && onCoverFetched) {
-      console.log(`[BookCover] "${title}" CALLING onCoverFetched with:`, fetchedCoverUrl);
-      onCoverFetched(fetchedCoverUrl);
+    const willBackfill = !!(fetchedCoverUrl && !coverUrl && onCoverFetched);
+    console.log(`[BookCover] "${title}" BACKFILL CHECK | fetchedUrl=${!!fetchedCoverUrl} | hasPropUrl=${!!coverUrl} | hasCallback=${!!onCoverFetched} | WILL_BACKFILL=${willBackfill}`);
+    if (willBackfill) {
+      console.log(`[BookCover] "${title}" >>> TRIGGERING BACKFILL with URL: ${fetchedCoverUrl}`);
+      onCoverFetched!(fetchedCoverUrl!);
     }
   }, [fetchedCoverUrl, coverUrl, onCoverFetched, title]);
 
