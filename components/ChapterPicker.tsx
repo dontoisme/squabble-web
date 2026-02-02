@@ -15,17 +15,24 @@ interface ChapterPickerProps {
 }
 
 export function ChapterPicker({ book, currentSeconds, onUpdate, disabled }: ChapterPickerProps) {
-  const { chapter, offsetSeconds } = secondsToChapter(book, currentSeconds);
+  const chapterData = secondsToChapter(book, currentSeconds);
 
-  const [selectedChapterIndex, setSelectedChapterIndex] = useState(chapter.index);
-  const [offsetInput, setOffsetInput] = useState(formatTimestamp(offsetSeconds));
+  const [selectedChapterIndex, setSelectedChapterIndex] = useState(chapterData?.chapter.index ?? 0);
+  const [offsetInput, setOffsetInput] = useState(formatTimestamp(chapterData?.offsetSeconds ?? 0));
 
   // Update local state when currentSeconds changes
   useEffect(() => {
-    const { chapter, offsetSeconds } = secondsToChapter(book, currentSeconds);
-    setSelectedChapterIndex(chapter.index);
-    setOffsetInput(formatTimestamp(offsetSeconds));
+    const data = secondsToChapter(book, currentSeconds);
+    if (data) {
+      setSelectedChapterIndex(data.chapter.index);
+      setOffsetInput(formatTimestamp(data.offsetSeconds));
+    }
   }, [book, currentSeconds]);
+
+  // Don't render if book has no chapters
+  if (!book.chapters.length) {
+    return null;
+  }
 
   const handleChapterChange = (index: number) => {
     setSelectedChapterIndex(index);
