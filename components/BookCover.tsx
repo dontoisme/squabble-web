@@ -76,8 +76,12 @@ export function BookCover({
   useEffect(() => {
     setImageLoaded(false);
   }, [effectiveCoverUrl]);
-  // Only show image after mount to prevent hydration flash
-  const hasImage = mounted && effectiveCoverUrl && !imageError;
+
+  // Show image immediately if coverUrl prop is provided (no hydration mismatch possible)
+  // Only wait for mount when using fetched/cached URL (to avoid hydration mismatch with sessionStorage)
+  const hasImage = coverUrl
+    ? (effectiveCoverUrl && !imageError)
+    : (mounted && effectiveCoverUrl && !imageError);
 
   return (
     <div className={`${sizeClasses[size]} ${className} relative rounded-lg overflow-hidden shadow-md shrink-0`}>
@@ -114,7 +118,7 @@ export function BookCover({
       </div>
 
       {/* Image overlays placeholder and fades in when loaded */}
-      {hasImage && (
+      {hasImage && effectiveCoverUrl && (
         <Image
           src={effectiveCoverUrl}
           alt={title}
