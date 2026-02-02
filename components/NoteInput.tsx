@@ -23,16 +23,23 @@ export function NoteInput({ book, currentProgressSeconds, onPostNote, disabled }
   const [posting, setPosting] = useState(false);
 
   // Default note position to current progress
-  const { chapter: initialChapter, offsetSeconds: initialOffset } = secondsToChapter(book, currentProgressSeconds);
-  const [selectedChapterIndex, setSelectedChapterIndex] = useState(initialChapter.index);
-  const [offsetInput, setOffsetInput] = useState(formatTimestamp(initialOffset));
+  const initialData = secondsToChapter(book, currentProgressSeconds);
+  const [selectedChapterIndex, setSelectedChapterIndex] = useState(initialData?.chapter.index ?? 0);
+  const [offsetInput, setOffsetInput] = useState(formatTimestamp(initialData?.offsetSeconds ?? 0));
 
   // Update defaults when progress changes
   useEffect(() => {
-    const { chapter, offsetSeconds } = secondsToChapter(book, currentProgressSeconds);
-    setSelectedChapterIndex(chapter.index);
-    setOffsetInput(formatTimestamp(offsetSeconds));
+    const data = secondsToChapter(book, currentProgressSeconds);
+    if (data) {
+      setSelectedChapterIndex(data.chapter.index);
+      setOffsetInput(formatTimestamp(data.offsetSeconds));
+    }
   }, [book, currentProgressSeconds]);
+
+  // Don't render if book has no chapters
+  if (!book.chapters.length) {
+    return null;
+  }
 
   const charCount = text.length;
   const isOverLimit = charCount > NOTE_MAX_CHARS;
