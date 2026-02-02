@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Search, Scroll, Swords, Headphones, X, Loader2 } from 'lucide-react';
+import { Search, Plus, Swords, Headphones, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
@@ -297,7 +297,7 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
                             {isAddingSingle ? (
                               <Loader2 className="w-3 h-3 animate-spin" />
                             ) : (
-                              <Scroll className="w-3 h-3" />
+                              <Plus className="w-3 h-3" />
                             )}
                             Add Quest
                           </Button>

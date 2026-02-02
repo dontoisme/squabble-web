@@ -92,7 +92,6 @@ export async function GET(request: NextRequest) {
     const books = hits
       .map((hit: { document: HardcoverSearchResult }) => hit.document)
       .filter((book: HardcoverSearchResult) => book.has_audiobook === true)
-      .slice(0, 12) // Limit to 12 results
       .map((book: HardcoverSearchResult) => ({
         hardcoverId: parseInt(book.id, 10),
         title: book.title,
@@ -106,7 +105,21 @@ export async function GET(request: NextRequest) {
         hasAudiobook: true,
       }));
 
-    return NextResponse.json({ books });
+    // Sort: Book 1s first within same series, then by original relevance
+    books.sort((a, b) => {
+      // If same series, sort by position
+      if (a.series && b.series && a.series === b.series) {
+        return (a.seriesPosition || 999) - (b.seriesPosition || 999);
+      }
+      // Otherwise, prioritize Book 1s
+      const aIsFirst = a.seriesPosition === 1;
+      const bIsFirst = b.seriesPosition === 1;
+      if (aIsFirst && !bIsFirst) return -1;
+      if (bIsFirst && !aIsFirst) return 1;
+      return 0; // Keep original order
+    });
+
+    return NextResponse.json({ books: books.slice(0, 12) });
   } catch (error) {
     console.error('Hardcover search error:', error);
     return NextResponse.json(
