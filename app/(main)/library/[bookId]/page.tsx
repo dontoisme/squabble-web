@@ -38,7 +38,7 @@ export default function BookPage() {
   const params = useParams();
   const bookId = params.bookId as string;
 
-  const { book, loading: bookLoading } = useGuildBook(bookId);
+  const { book, loading: bookLoading, updateBookCoverUrl } = useGuildBook(bookId);
   const { hasGuild, guild, members } = useGuild();
   const { hasToken: hasHardcoverToken } = useHardcoverToken();
 
@@ -144,7 +144,14 @@ export default function BookPage() {
     <div className="space-y-6">
       {/* Book Header */}
       <div className="flex gap-6">
-        <BookCover title={book.title} author={book.author} coverUrl={book.coverUrl} size="md" autoFetch={hasHardcoverToken} />
+        <BookCover
+          title={book.title}
+          author={book.author}
+          coverUrl={book.coverUrl}
+          size="md"
+          autoFetch={hasHardcoverToken}
+          onCoverFetched={(url) => updateBookCoverUrl(book.id, url)}
+        />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             {book.status === 'reading' && (

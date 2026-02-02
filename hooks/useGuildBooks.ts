@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   collection,
   onSnapshot,
   query,
   orderBy,
+  doc,
+  updateDoc,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useGuild } from './useGuild';
@@ -169,6 +171,17 @@ export function useGuildBooks() {
   const queuedBooks = books.filter((b) => b.status === 'queued');
   const finishedBooks = books.filter((b) => b.status === 'finished');
 
+  // Update a book's cover URL (for backfilling old books)
+  const updateBookCoverUrl = useCallback(async (bookId: string, coverUrl: string) => {
+    if (!guild?.id) return;
+    try {
+      const bookRef = doc(db, 'guilds', guild.id, 'books', bookId);
+      await updateDoc(bookRef, { coverUrl });
+    } catch (err) {
+      console.error('Failed to update book cover URL:', err);
+    }
+  }, [guild?.id]);
+
   return {
     books,
     currentBook,
@@ -177,6 +190,7 @@ export function useGuildBooks() {
     loading,
     error,
     hasBooks: books.length > 0,
+    updateBookCoverUrl,
   };
 }
 
@@ -184,7 +198,7 @@ export function useGuildBooks() {
  * Get a book by ID from the guild books
  */
 export function useGuildBook(bookId: string | undefined) {
-  const { books, loading, error } = useGuildBooks();
+  const { books, loading, error, updateBookCoverUrl } = useGuildBooks();
 
   const book = bookId ? books.find((b) => b.id === bookId) : null;
 
@@ -192,5 +206,6 @@ export function useGuildBook(bookId: string | undefined) {
     book,
     loading,
     error,
+    updateBookCoverUrl,
   };
 }

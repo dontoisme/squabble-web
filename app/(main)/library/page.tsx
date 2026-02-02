@@ -10,7 +10,13 @@ import { BookCover } from '@/components/BookCover';
 import { BookSearch } from '@/components/BookSearch';
 import { Library, BookOpen, CheckCircle, Clock } from 'lucide-react';
 
-function BookCard({ book, autoFetchCover = false }: { book: GuildBook; autoFetchCover?: boolean }) {
+interface BookCardProps {
+  book: GuildBook;
+  autoFetchCover?: boolean;
+  onCoverFetched?: (coverUrl: string) => void;
+}
+
+function BookCard({ book, autoFetchCover = false, onCoverFetched }: BookCardProps) {
   const ownershipCount = Object.values(book.memberOwnership).filter(
     (o) => o.hasBook || (o.progressPercent !== undefined && o.progressPercent > 0)
   ).length;
@@ -27,6 +33,7 @@ function BookCard({ book, autoFetchCover = false }: { book: GuildBook; autoFetch
               coverUrl={book.coverUrl}
               size="lg"
               autoFetch={autoFetchCover}
+              onCoverFetched={onCoverFetched}
             />
           </div>
           <div className="flex items-center gap-2">
@@ -99,7 +106,7 @@ function NoGuildPrompt() {
 
 export default function LibraryPage() {
   const { hasGuild } = useGuild();
-  const { books, currentBook, queuedBooks, finishedBooks, loading, hasBooks } = useGuildBooks();
+  const { books, currentBook, queuedBooks, finishedBooks, loading, hasBooks, updateBookCoverUrl } = useGuildBooks();
   const { hasToken: hasHardcoverToken } = useHardcoverToken();
 
   return (
@@ -134,7 +141,11 @@ export default function LibraryPage() {
                 Currently Reading
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <BookCard book={currentBook} autoFetchCover={hasHardcoverToken} />
+                <BookCard
+                  book={currentBook}
+                  autoFetchCover={hasHardcoverToken}
+                  onCoverFetched={(url) => updateBookCoverUrl(currentBook.id, url)}
+                />
               </div>
             </section>
           )}
@@ -148,7 +159,12 @@ export default function LibraryPage() {
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {queuedBooks.map((book) => (
-                  <BookCard key={book.id} book={book} autoFetchCover={hasHardcoverToken} />
+                  <BookCard
+                    key={book.id}
+                    book={book}
+                    autoFetchCover={hasHardcoverToken}
+                    onCoverFetched={(url) => updateBookCoverUrl(book.id, url)}
+                  />
                 ))}
               </div>
             </section>
@@ -163,7 +179,12 @@ export default function LibraryPage() {
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {finishedBooks.map((book) => (
-                  <BookCard key={book.id} book={book} autoFetchCover={hasHardcoverToken} />
+                  <BookCard
+                    key={book.id}
+                    book={book}
+                    autoFetchCover={hasHardcoverToken}
+                    onCoverFetched={(url) => updateBookCoverUrl(book.id, url)}
+                  />
                 ))}
               </div>
             </section>
