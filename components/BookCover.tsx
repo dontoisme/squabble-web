@@ -75,20 +75,17 @@ export function BookCover({
 
   const effectiveCoverUrl = coverUrl || fetchedCoverUrl;
 
-  // Debug logging
-  console.log(`[BookCover] "${title}" | coverUrl=${coverUrl ? coverUrl.substring(0, 50) + '...' : 'NONE'} | fetchedUrl=${fetchedCoverUrl ? 'YES' : 'NONE'} | shouldFetch=${shouldFetch} | autoFetch=${autoFetch} | hasCallback=${!!onCoverFetched}`);
-
   // Reset image loaded state when URL changes
   useEffect(() => {
+    console.log(`[BookCover] "${title}" URL CHANGED - resetting imageLoaded to false`);
     setImageLoaded(false);
-  }, [effectiveCoverUrl]);
+  }, [effectiveCoverUrl, title]);
 
   // Notify parent when a cover is fetched (for persisting to database)
   useEffect(() => {
     const willBackfill = !!(fetchedCoverUrl && !coverUrl && onCoverFetched);
-    console.log(`[BookCover] "${title}" BACKFILL CHECK | fetchedUrl=${!!fetchedCoverUrl} | hasPropUrl=${!!coverUrl} | hasCallback=${!!onCoverFetched} | WILL_BACKFILL=${willBackfill}`);
     if (willBackfill) {
-      console.log(`[BookCover] "${title}" >>> TRIGGERING BACKFILL with URL: ${fetchedCoverUrl}`);
+      console.log(`[BookCover] "${title}" >>> TRIGGERING BACKFILL`);
       onCoverFetched!(fetchedCoverUrl!);
     }
   }, [fetchedCoverUrl, coverUrl, onCoverFetched, title]);
@@ -98,6 +95,9 @@ export function BookCover({
   const hasImage = coverUrl
     ? (effectiveCoverUrl && !imageError)
     : (mounted && effectiveCoverUrl && !imageError);
+
+  // Debug logging (after hasImage is defined)
+  console.log(`[BookCover] "${title}" RENDER | hasImage=${hasImage} | imageLoaded=${imageLoaded} | mounted=${mounted} | coverUrl=${!!coverUrl}`);
 
   return (
     <div className={`${sizeClasses[size]} ${className} relative rounded-lg overflow-hidden shadow-md shrink-0`}>
@@ -140,8 +140,14 @@ export function BookCover({
           alt={title}
           fill
           className={`object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-          onLoad={() => setImageLoaded(true)}
-          onError={() => setImageError(true)}
+          onLoad={() => {
+            console.log(`[BookCover] "${title}" IMAGE LOADED`);
+            setImageLoaded(true);
+          }}
+          onError={() => {
+            console.log(`[BookCover] "${title}" IMAGE ERROR`);
+            setImageError(true);
+          }}
           unoptimized // External images from Hardcover
         />
       )}
