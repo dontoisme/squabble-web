@@ -173,18 +173,12 @@ export function useGuildBooks() {
 
   // Update a book's cover URL (for backfilling old books)
   const updateBookCoverUrl = useCallback(async (bookId: string, coverUrl: string) => {
-    console.log('[updateBookCoverUrl] Called with:', { bookId, coverUrl, guildId: guild?.id });
-    if (!guild?.id) {
-      console.log('[updateBookCoverUrl] No guild ID, skipping');
-      return;
-    }
+    if (!guild?.id) return;
     try {
       const bookRef = doc(db, 'guilds', guild.id, 'books', bookId);
-      console.log('[updateBookCoverUrl] Updating Firestore:', bookRef.path);
       await updateDoc(bookRef, { coverUrl });
-      console.log('[updateBookCoverUrl] SUCCESS - Updated coverUrl for book:', bookId);
     } catch (err) {
-      console.error('[updateBookCoverUrl] FAILED to update book cover URL:', err);
+      console.error('Failed to update book cover URL:', err);
     }
   }, [guild?.id]);
 

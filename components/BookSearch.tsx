@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Search, Plus, Swords, Headphones, X, Loader2 } from 'lucide-react';
+import { Search, Plus, Swords, Headphones, X, Loader2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
@@ -277,11 +277,17 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
                               {seriesInfo}
                             </p>
                           )}
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
                             {book.audioDurationSeconds && (
                               <Badge variant="secondary" className="text-xs gap-1">
                                 <Headphones className="w-3 h-3" />
                                 {formatDuration(book.audioDurationSeconds)}
+                              </Badge>
+                            )}
+                            {book.popularity > 0 && (
+                              <Badge variant="secondary" className="text-xs gap-1">
+                                <Users className="w-3 h-3" />
+                                {book.popularity.toLocaleString()} readers
                               </Badge>
                             )}
                           </div>
@@ -306,7 +312,7 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
                               size="sm"
                               onClick={() => handleAddEpicQuest(book)}
                               disabled={isAdding || !hasGuild}
-                              className="gap-1 text-xs"
+                              className="gap-1 text-xs bg-purple-600 hover:bg-purple-700 text-white"
                             >
                               {isAddingEpic ? (
                                 <Loader2 className="w-3 h-3 animate-spin" />

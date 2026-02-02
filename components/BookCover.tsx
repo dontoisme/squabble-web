@@ -77,27 +77,21 @@ export function BookCover({
 
   // Reset image loaded state when URL changes
   useEffect(() => {
-    console.log(`[BookCover] "${title}" URL CHANGED - resetting imageLoaded to false`);
     setImageLoaded(false);
-  }, [effectiveCoverUrl, title]);
+  }, [effectiveCoverUrl]);
 
   // Notify parent when a cover is fetched (for persisting to database)
   useEffect(() => {
-    const willBackfill = !!(fetchedCoverUrl && !coverUrl && onCoverFetched);
-    if (willBackfill) {
-      console.log(`[BookCover] "${title}" >>> TRIGGERING BACKFILL`);
-      onCoverFetched!(fetchedCoverUrl!);
+    if (fetchedCoverUrl && !coverUrl && onCoverFetched) {
+      onCoverFetched(fetchedCoverUrl);
     }
-  }, [fetchedCoverUrl, coverUrl, onCoverFetched, title]);
+  }, [fetchedCoverUrl, coverUrl, onCoverFetched]);
 
   // Show image immediately if coverUrl prop is provided (no hydration mismatch possible)
   // Only wait for mount when using fetched/cached URL (to avoid hydration mismatch with sessionStorage)
   const hasImage = coverUrl
     ? (effectiveCoverUrl && !imageError)
     : (mounted && effectiveCoverUrl && !imageError);
-
-  // Debug logging (after hasImage is defined)
-  console.log(`[BookCover] "${title}" RENDER | hasImage=${hasImage} | imageLoaded=${imageLoaded} | mounted=${mounted} | coverUrl=${!!coverUrl}`);
 
   return (
     <div className={`${sizeClasses[size]} ${className} relative rounded-lg overflow-hidden shadow-md shrink-0`}>
@@ -147,14 +141,8 @@ export function BookCover({
               ? 'opacity-100' // Immediate display for prop-provided URLs
               : `transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}` // Fade-in for fetched URLs
           }`}
-          onLoad={() => {
-            console.log(`[BookCover] "${title}" IMAGE LOADED`);
-            setImageLoaded(true);
-          }}
-          onError={() => {
-            console.log(`[BookCover] "${title}" IMAGE ERROR`);
-            setImageError(true);
-          }}
+          onLoad={() => setImageLoaded(true)}
+          onError={() => setImageError(true)}
           unoptimized // External images from Hardcover
         />
       )}
