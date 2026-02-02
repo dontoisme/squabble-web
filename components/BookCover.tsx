@@ -141,7 +141,8 @@ export function BookCover({
           fill
           // Skip fade-in transition when coverUrl comes from props (already cached)
           // Only use transition when actively fetching (shouldFetch was true)
-          className={`object-cover ${
+          // z-20 ensures image is above placeholder (which has z-10 on loading indicator)
+          className={`object-cover z-20 ${
             coverUrl
               ? 'opacity-100' // Immediate display for prop-provided URLs
               : `transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}` // Fade-in for fetched URLs
