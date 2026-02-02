@@ -120,28 +120,61 @@ export function useBookCoverLookup() {
   return { lookupCover };
 }
 
-// Cache for cover URLs to avoid repeated lookups
-const coverCache = new Map<string, string | null>();
+// In-memory cache for cover URLs (fast access within same page)
+const memoryCache = new Map<string, string | null>();
 // Track in-flight fetches to prevent duplicates
 const fetchingSet = new Set<string>();
+// SessionStorage key prefix
+const COVER_CACHE_PREFIX = 'squabble_cover_';
+
+// Helper to get from persistent cache
+function getFromCache(key: string): string | null | undefined {
+  // Check memory first (fastest)
+  if (memoryCache.has(key)) {
+    return memoryCache.get(key);
+  }
+  // Check sessionStorage (persists across navigation)
+  if (typeof window !== 'undefined') {
+    const stored = sessionStorage.getItem(COVER_CACHE_PREFIX + key);
+    if (stored !== null) {
+      const value = stored === '' ? null : stored;
+      memoryCache.set(key, value); // Populate memory cache
+      return value;
+    }
+  }
+  return undefined;
+}
+
+// Helper to save to persistent cache
+function saveToCache(key: string, value: string | null): void {
+  memoryCache.set(key, value);
+  if (typeof window !== 'undefined') {
+    sessionStorage.setItem(COVER_CACHE_PREFIX + key, value || '');
+  }
+}
 
 /**
  * Hook for getting a book cover with caching
+ * Uses sessionStorage to persist across page navigations
  */
 export function useCachedCover(title: string, author?: string) {
   const cacheKey = title ? `${title}|${author || ''}` : '';
 
   // Initialize from cache synchronously to prevent flicker
-  const cachedValue = cacheKey ? coverCache.get(cacheKey) : undefined;
-  const [coverUrl, setCoverUrl] = useState<string | null>(cachedValue ?? null);
+  const [coverUrl, setCoverUrl] = useState<string | null>(() => {
+    if (!cacheKey) return null;
+    const cached = getFromCache(cacheKey);
+    return cached !== undefined ? cached : null;
+  });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!title) return;
 
-    // Already have cached value
-    if (coverCache.has(cacheKey)) {
-      setCoverUrl(coverCache.get(cacheKey) || null);
+    // Check cache again (might have been populated by another component)
+    const cached = getFromCache(cacheKey);
+    if (cached !== undefined) {
+      setCoverUrl(cached);
       return;
     }
 
@@ -158,11 +191,11 @@ export function useCachedCover(title: string, author?: string) {
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
         const url = data?.book?.coverUrl || null;
-        coverCache.set(cacheKey, url);
+        saveToCache(cacheKey, url);
         setCoverUrl(url);
       })
       .catch(() => {
-        coverCache.set(cacheKey, null);
+        saveToCache(cacheKey, null);
         setCoverUrl(null);
       })
       .finally(() => {
