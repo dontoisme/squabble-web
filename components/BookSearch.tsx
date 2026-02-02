@@ -295,7 +295,6 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
                         <div className="flex flex-col gap-1 shrink-0">
                           <Button
                             size="sm"
-                            variant="outline"
                             onClick={() => handleAddBook(book)}
                             disabled={isAdding || !hasGuild}
                             className="gap-1 text-xs"
