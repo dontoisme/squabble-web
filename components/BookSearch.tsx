@@ -312,7 +312,7 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
                               size="sm"
                               onClick={() => handleAddEpicQuest(book)}
                               disabled={isAdding || !hasGuild}
-                              className="gap-1 text-xs bg-purple-600 hover:bg-purple-700 text-white"
+                              className="gap-1 text-xs bg-violet-400 hover:bg-violet-500 text-white"
                             >
                               {isAddingEpic ? (
                                 <Loader2 className="w-3 h-3 animate-spin" />
