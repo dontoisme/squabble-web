@@ -3,13 +3,22 @@ import { NextRequest, NextResponse } from 'next/server';
 const HARDCOVER_API = 'https://api.hardcover.app/v1/graphql';
 
 interface HardcoverSearchResult {
-  id: number;
+  id: string;
   title: string;
   author_names?: string[];
   series_names?: string[];
   image?: { url: string };
   audio_seconds?: number;
   users_read_count?: number;
+  has_audiobook?: boolean;
+  featured_series?: {
+    position: number;
+    series: {
+      name: string;
+      books_count: number;
+      primary_books_count: number;
+    };
+  };
 }
 
 const SEARCH_QUERY = `
@@ -17,7 +26,7 @@ const SEARCH_QUERY = `
     search(
       query: $query,
       query_type: "books",
-      per_page: 12,
+      per_page: 20,
       page: 1,
       sort: "activities_count:desc"
     ) {
@@ -79,19 +88,23 @@ export async function GET(request: NextRequest) {
     const searchResults = data.data?.search?.results;
     const hits = searchResults?.hits || [];
 
-    const books = hits.map((hit: { document: HardcoverSearchResult }) => {
-      const book = hit.document;
-      return {
-        hardcoverId: parseInt(book.id as unknown as string, 10),
+    // Filter to audiobooks only and map to our format
+    const books = hits
+      .map((hit: { document: HardcoverSearchResult }) => hit.document)
+      .filter((book: HardcoverSearchResult) => book.has_audiobook === true)
+      .slice(0, 12) // Limit to 12 results
+      .map((book: HardcoverSearchResult) => ({
+        hardcoverId: parseInt(book.id, 10),
         title: book.title,
         author: book.author_names?.[0] || null,
-        series: book.series_names?.[0] || null,
+        series: book.featured_series?.series?.name || book.series_names?.[0] || null,
+        seriesPosition: book.featured_series?.position || null,
+        seriesBooksCount: book.featured_series?.series?.primary_books_count || book.featured_series?.series?.books_count || null,
         coverUrl: book.image?.url || null,
         audioDurationSeconds: book.audio_seconds || null,
         popularity: book.users_read_count || 0,
-        hasAudiobook: (book.audio_seconds || 0) > 0,
-      };
-    });
+        hasAudiobook: true,
+      }));
 
     return NextResponse.json({ books });
   } catch (error) {

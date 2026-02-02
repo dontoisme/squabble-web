@@ -7,6 +7,8 @@ export interface HardcoverBook {
   title: string;
   author: string | null;
   series: string | null;
+  seriesPosition: number | null;
+  seriesBooksCount: number | null;
   coverUrl: string | null;
   audioDurationSeconds: number | null;
   popularity: number;

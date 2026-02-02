@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useHardcoverSearch, HardcoverBook } from '@/hooks/useHardcover';
 import { useGuild } from '@/hooks/useGuild';
 import { BookCover } from './BookCover';
@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Search, Plus, Headphones, Users, X, Loader2 } from 'lucide-react';
+import { Search, Scroll, Swords, Headphones, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
@@ -33,7 +33,7 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [adding, setAdding] = useState<number | null>(null);
+  const [adding, setAdding] = useState<string | null>(null); // 'single-{id}' or 'epic-{id}'
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Debounced search
@@ -70,14 +70,12 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
       return;
     }
 
-    setAdding(book.hardcoverId);
+    setAdding(`single-${book.hardcoverId}`);
 
     try {
-      // Generate a simple book ID from the Hardcover ID
       const bookId = `hc_${book.hardcoverId}`;
-
-      // Add to guild books collection
       const booksRef = collection(db, 'guilds', guild.id, 'books');
+
       await addDoc(booksRef, {
         id: bookId,
         title: book.title,
@@ -85,24 +83,79 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
         hardcoverId: book.hardcoverId,
         coverUrl: book.coverUrl,
         audioDurationSeconds: book.audioDurationSeconds,
+        series: book.series,
+        seriesPosition: book.seriesPosition,
         addedBy: user.uid,
         addedAt: serverTimestamp(),
         status: 'queued',
-        queuePosition: 999, // Will be sorted later
+        queuePosition: 999,
         memberOwnership: {
           [user.uid]: {
-            hasBook: false, // Web users don't have the actual file
+            hasBook: false,
             progressPercent: 0,
           },
         },
       });
 
-      toast.success(`"${book.title}" added to guild library!`);
+      toast.success(`"${book.title}" added to Quest Board!`);
       onBookAdded?.();
       handleClose();
     } catch (err) {
       console.error('Error adding book:', err);
-      toast.error('Failed to add book to library');
+      toast.error('Failed to add book');
+    } finally {
+      setAdding(null);
+    }
+  };
+
+  const handleAddEpicQuest = async (book: HardcoverBook) => {
+    if (!guild?.id || !user) {
+      toast.error('You must be in a guild to add books');
+      return;
+    }
+
+    if (!book.series || !book.seriesBooksCount) {
+      toast.error('Series information not available');
+      return;
+    }
+
+    setAdding(`epic-${book.hardcoverId}`);
+
+    try {
+      // For now, just add this book with a note that it's an epic quest
+      // In the future, we could search for all books in the series
+      const bookId = `hc_${book.hardcoverId}`;
+      const booksRef = collection(db, 'guilds', guild.id, 'books');
+
+      await addDoc(booksRef, {
+        id: bookId,
+        title: book.title,
+        author: book.author,
+        hardcoverId: book.hardcoverId,
+        coverUrl: book.coverUrl,
+        audioDurationSeconds: book.audioDurationSeconds,
+        series: book.series,
+        seriesPosition: book.seriesPosition,
+        seriesBooksCount: book.seriesBooksCount,
+        isEpicQuest: true, // Mark as epic quest
+        addedBy: user.uid,
+        addedAt: serverTimestamp(),
+        status: 'queued',
+        queuePosition: 999,
+        memberOwnership: {
+          [user.uid]: {
+            hasBook: false,
+            progressPercent: 0,
+          },
+        },
+      });
+
+      toast.success(`Epic Quest "${book.series}" (${book.seriesBooksCount} books) added!`);
+      onBookAdded?.();
+      handleClose();
+    } catch (err) {
+      console.error('Error adding epic quest:', err);
+      toast.error('Failed to add epic quest');
     } finally {
       setAdding(null);
     }
@@ -115,8 +168,23 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
     return `${hours}h ${minutes}m`;
   };
 
+  const formatSeriesInfo = (book: HardcoverBook) => {
+    if (!book.series) return null;
+    if (book.seriesPosition && book.seriesBooksCount) {
+      return `${book.series} · Book ${book.seriesPosition} of ${book.seriesBooksCount}`;
+    }
+    if (book.seriesPosition) {
+      return `${book.series} · Book ${book.seriesPosition}`;
+    }
+    return book.series;
+  };
+
+  const isFirstInSeries = (book: HardcoverBook) => {
+    return book.seriesPosition === 1 && book.seriesBooksCount && book.seriesBooksCount > 1;
+  };
+
   if (!hasToken) {
-    return null; // Don't show search if no token configured
+    return null;
   }
 
   return (
@@ -129,9 +197,9 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Add Book to Guild Library</DialogTitle>
+          <DialogTitle>Add to Quest Board</DialogTitle>
           <DialogDescription>
-            Search Hardcover to find books for your guild&apos;s reading list.
+            Search for audiobooks to add to your guild&apos;s quest board.
           </DialogDescription>
         </DialogHeader>
 
@@ -169,69 +237,91 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
 
           {!loading && !error && results.length === 0 && query && (
             <div className="text-center py-12 text-muted-foreground">
-              No books found for &quot;{query}&quot;
+              No audiobooks found for &quot;{query}&quot;
             </div>
           )}
 
           {!loading && !error && results.length === 0 && !query && (
             <div className="text-center py-12 text-muted-foreground">
-              Start typing to search for books
+              Start typing to search for audiobooks
             </div>
           )}
 
           {results.length > 0 && (
             <div className="space-y-3 py-2">
-              {results.map((book) => (
-                <Card key={book.hardcoverId} className="overflow-hidden">
-                  <CardContent className="p-3">
-                    <div className="flex gap-3">
-                      <BookCover
-                        title={book.title}
-                        coverUrl={book.coverUrl || undefined}
-                        size="sm"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium truncate">{book.title}</h4>
-                        {book.author && (
-                          <p className="text-sm text-muted-foreground truncate">
-                            {book.author}
-                          </p>
-                        )}
-                        {book.series && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {book.series}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-2 mt-1">
-                          {book.hasAudiobook && (
-                            <Badge variant="secondary" className="text-xs gap-1">
-                              <Headphones className="w-3 h-3" />
-                              {formatDuration(book.audioDurationSeconds)}
-                            </Badge>
+              {results.map((book) => {
+                const seriesInfo = formatSeriesInfo(book);
+                const showEpicQuest = isFirstInSeries(book);
+                const isAddingSingle = adding === `single-${book.hardcoverId}`;
+                const isAddingEpic = adding === `epic-${book.hardcoverId}`;
+                const isAdding = isAddingSingle || isAddingEpic;
+
+                return (
+                  <Card key={book.hardcoverId} className="overflow-hidden">
+                    <CardContent className="p-3">
+                      <div className="flex gap-3">
+                        <BookCover
+                          title={book.title}
+                          coverUrl={book.coverUrl || undefined}
+                          size="sm"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium truncate">{book.title}</h4>
+                          {book.author && (
+                            <p className="text-sm text-muted-foreground truncate">
+                              {book.author}
+                            </p>
                           )}
-                          {book.popularity > 0 && (
-                            <Badge variant="outline" className="text-xs gap-1">
-                              <Users className="w-3 h-3" />
-                              {book.popularity.toLocaleString()}
-                            </Badge>
+                          {seriesInfo && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              {seriesInfo}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 mt-1">
+                            {book.audioDurationSeconds && (
+                              <Badge variant="secondary" className="text-xs gap-1">
+                                <Headphones className="w-3 h-3" />
+                                {formatDuration(book.audioDurationSeconds)}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1 shrink-0">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleAddBook(book)}
+                            disabled={isAdding || !hasGuild}
+                            className="gap-1 text-xs"
+                          >
+                            {isAddingSingle ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Scroll className="w-3 h-3" />
+                            )}
+                            Add Quest
+                          </Button>
+                          {showEpicQuest && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleAddEpicQuest(book)}
+                              disabled={isAdding || !hasGuild}
+                              className="gap-1 text-xs"
+                            >
+                              {isAddingEpic ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Swords className="w-3 h-3" />
+                              )}
+                              Epic Quest
+                            </Button>
                           )}
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleAddBook(book)}
-                        disabled={adding === book.hardcoverId || !hasGuild}
-                      >
-                        {adding === book.hardcoverId ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Plus className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
