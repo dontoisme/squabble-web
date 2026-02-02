@@ -144,7 +144,7 @@ export default function BookPage() {
     <div className="space-y-6">
       {/* Book Header */}
       <div className="flex gap-6">
-        <BookCover title={book.title} author={book.author} size="md" autoFetch={hasHardcoverToken} />
+        <BookCover title={book.title} author={book.author} coverUrl={book.coverUrl} size="md" autoFetch={hasHardcoverToken} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             {book.status === 'reading' && (

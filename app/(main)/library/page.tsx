@@ -24,6 +24,7 @@ function BookCard({ book, autoFetchCover = false }: { book: GuildBook; autoFetch
             <BookCover
               title={book.title}
               author={book.author}
+              coverUrl={book.coverUrl}
               size="lg"
               autoFetch={autoFetchCover}
             />

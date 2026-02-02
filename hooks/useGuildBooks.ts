@@ -33,6 +33,7 @@ export interface GuildBook {
   id: string;
   title: string;
   author?: string;
+  coverUrl?: string;
   addedBy: string;
   addedAt: Date;
   status: GuildBookStatus;
@@ -86,6 +87,7 @@ function guildBookFromFirestore(
     id,
     title,
     author: data.author as string | undefined,
+    coverUrl: data.coverUrl as string | undefined,
     addedBy,
     addedAt,
     status,
