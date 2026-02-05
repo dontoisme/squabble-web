@@ -49,15 +49,18 @@ export function useProgress(book: Book | undefined) {
   }, [guildId, progressDocId]);
 
   // Update progress
-  const updateProgress = useCallback(async (timestampSeconds: number) => {
+  // For books with duration (mobile/local audio), pass timestamp in seconds.
+  // For books without duration (web/Hardcover), pass percentage directly (0-100).
+  const updateProgress = useCallback(async (timestampOrPercent: number) => {
     if (!user || !guildId || !book || !progressDocId) {
       throw new Error('Cannot update progress');
     }
 
-    const progressPercent = calculateProgressPercent(
-      timestampSeconds,
-      book.totalDurationSeconds
-    );
+    const hasDuration = book.totalDurationSeconds > 0;
+    const progressPercent = hasDuration
+      ? calculateProgressPercent(timestampOrPercent, book.totalDurationSeconds)
+      : Math.min(100, Math.max(0, timestampOrPercent));
+    const progressTimestamp = hasDuration ? timestampOrPercent : 0;
 
     const progressData: Omit<Progress, 'lastUpdatedAt'> & { lastUpdatedAt: ReturnType<typeof serverTimestamp> } = {
       bookId: book.id,
@@ -65,7 +68,7 @@ export function useProgress(book: Book | undefined) {
       userId: user.uid,
       userEmail: user.email || '',
       progressPercent,
-      progressTimestamp: timestampSeconds,
+      progressTimestamp,
       totalDuration: book.totalDurationSeconds,
       lastUpdatedAt: serverTimestamp(),
       isActive: true,

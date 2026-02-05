@@ -21,25 +21,32 @@ interface NoteInputProps {
 export function NoteInput({ book, currentProgressSeconds, onPostNote, disabled }: NoteInputProps) {
   const [text, setText] = useState('');
   const [posting, setPosting] = useState(false);
+  const hasChapters = book.chapters.length > 0;
 
-  // Default note position to current progress
-  const initialData = secondsToChapter(book, currentProgressSeconds);
+  // Chapter-based state
+  const initialData = hasChapters ? secondsToChapter(book, currentProgressSeconds) : null;
   const [selectedChapterIndex, setSelectedChapterIndex] = useState(initialData?.chapter.index ?? 0);
-  const [offsetInput, setOffsetInput] = useState(formatTimestamp(initialData?.offsetSeconds ?? 0));
+  const [offsetInput, setOffsetInput] = useState(
+    hasChapters ? formatTimestamp(initialData?.offsetSeconds ?? 0) : ''
+  );
+
+  // Timestamp-only state (for books without chapters)
+  const [timestampInput, setTimestampInput] = useState(
+    hasChapters ? '' : formatTimestamp(currentProgressSeconds)
+  );
 
   // Update defaults when progress changes
   useEffect(() => {
-    const data = secondsToChapter(book, currentProgressSeconds);
-    if (data) {
-      setSelectedChapterIndex(data.chapter.index);
-      setOffsetInput(formatTimestamp(data.offsetSeconds));
+    if (hasChapters) {
+      const data = secondsToChapter(book, currentProgressSeconds);
+      if (data) {
+        setSelectedChapterIndex(data.chapter.index);
+        setOffsetInput(formatTimestamp(data.offsetSeconds));
+      }
+    } else {
+      setTimestampInput(formatTimestamp(currentProgressSeconds));
     }
-  }, [book, currentProgressSeconds]);
-
-  // Don't render if book has no chapters
-  if (!book.chapters.length) {
-    return null;
-  }
+  }, [book, currentProgressSeconds, hasChapters]);
 
   const charCount = text.length;
   const isOverLimit = charCount > NOTE_MAX_CHARS;
@@ -50,8 +57,13 @@ export function NoteInput({ book, currentProgressSeconds, onPostNote, disabled }
 
     setPosting(true);
     try {
-      const offset = parseTimestamp(offsetInput);
-      const timestampSeconds = chapterToSeconds(book, selectedChapterIndex, offset);
+      let timestampSeconds: number;
+      if (hasChapters) {
+        const offset = parseTimestamp(offsetInput);
+        timestampSeconds = chapterToSeconds(book, selectedChapterIndex, offset);
+      } else {
+        timestampSeconds = parseTimestamp(timestampInput);
+      }
       await onPostNote(text.trim(), timestampSeconds);
       setText('');
       toast.success('Note posted!');
@@ -63,7 +75,7 @@ export function NoteInput({ book, currentProgressSeconds, onPostNote, disabled }
     }
   };
 
-  const selectedChapter = book.chapters[selectedChapterIndex];
+  const selectedChapter = hasChapters ? book.chapters[selectedChapterIndex] : null;
 
   return (
     <Card>
@@ -73,40 +85,59 @@ export function NoteInput({ book, currentProgressSeconds, onPostNote, disabled }
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
+            {hasChapters ? (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Chapter</Label>
+                    <select
+                      className="w-full h-9 px-2 py-1 text-sm border rounded-md bg-background"
+                      value={selectedChapterIndex}
+                      onChange={(e) => {
+                        setSelectedChapterIndex(Number(e.target.value));
+                        setOffsetInput('0:00');
+                      }}
+                      disabled={disabled || posting}
+                    >
+                      {book.chapters.map((ch) => (
+                        <option key={ch.index} value={ch.index}>
+                          {ch.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Time offset</Label>
+                    <Input
+                      type="text"
+                      placeholder="0:00"
+                      value={offsetInput}
+                      onChange={(e) => setOffsetInput(e.target.value)}
+                      disabled={disabled || posting}
+                      className="h-9 font-mono text-sm"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  @ {selectedChapter?.title} + {offsetInput}
+                </p>
+              </>
+            ) : (
               <div>
-                <Label className="text-xs">Chapter</Label>
-                <select
-                  className="w-full h-9 px-2 py-1 text-sm border rounded-md bg-background"
-                  value={selectedChapterIndex}
-                  onChange={(e) => {
-                    setSelectedChapterIndex(Number(e.target.value));
-                    setOffsetInput('0:00');
-                  }}
-                  disabled={disabled || posting}
-                >
-                  {book.chapters.map((ch) => (
-                    <option key={ch.index} value={ch.index}>
-                      {ch.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label className="text-xs">Time offset</Label>
+                <Label className="text-xs">Timestamp (HH:MM:SS or MM:SS)</Label>
                 <Input
                   type="text"
-                  placeholder="0:00"
-                  value={offsetInput}
-                  onChange={(e) => setOffsetInput(e.target.value)}
+                  placeholder="1:23:45"
+                  value={timestampInput}
+                  onChange={(e) => setTimestampInput(e.target.value)}
                   disabled={disabled || posting}
                   className="h-9 font-mono text-sm"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Enter the audiobook timestamp for this note
+                </p>
               </div>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              @ {selectedChapter?.title} + {offsetInput}
-            </p>
+            )}
           </div>
 
           <div className="space-y-2">

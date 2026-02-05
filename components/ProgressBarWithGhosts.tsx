@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { GhostProgress } from '@/hooks/useGuildProgress';
 import { formatTimestamp } from '@/lib/utils/time';
 import {
@@ -15,6 +14,8 @@ interface ProgressBarWithGhostsProps {
   progressPercent: number;
   totalDurationSeconds: number;
   ghosts: GhostProgress[];
+  /** When true, show percentage labels instead of timestamp labels */
+  percentOnly?: boolean;
 }
 
 // Generate consistent colors for ghosts based on user ID
@@ -45,13 +46,20 @@ export function ProgressBarWithGhosts({
   progressPercent,
   totalDurationSeconds,
   ghosts,
+  percentOnly = false,
 }: ProgressBarWithGhostsProps) {
+  const showTimestamps = !percentOnly && totalDurationSeconds > 0;
+
   return (
     <TooltipProvider>
       <div className="space-y-1">
         {/* Progress label */}
         <div className="flex justify-between text-sm">
-          <span>{formatTimestamp(progressSeconds)}</span>
+          {showTimestamps ? (
+            <span>{formatTimestamp(progressSeconds)}</span>
+          ) : (
+            <span className="text-muted-foreground">Progress</span>
+          )}
           <span className="text-muted-foreground">{progressPercent.toFixed(1)}%</span>
         </div>
 
@@ -77,7 +85,9 @@ export function ProgressBarWithGhosts({
               <TooltipContent side="top" className="text-xs">
                 <p className="font-medium">{ghost.displayName}</p>
                 <p className="text-muted-foreground">
-                  {formatTimestamp(ghost.progressTimestamp)} ({ghost.progressPercent.toFixed(0)}%)
+                  {showTimestamps
+                    ? `${formatTimestamp(ghost.progressTimestamp)} (${ghost.progressPercent.toFixed(0)}%)`
+                    : `${ghost.progressPercent.toFixed(0)}%`}
                 </p>
               </TooltipContent>
             </Tooltip>

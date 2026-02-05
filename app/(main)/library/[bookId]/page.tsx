@@ -1,17 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { formatTimestamp } from '@/lib/utils/time';
+import { useAuth } from '@/contexts/AuthContext';
 import { useProgress } from '@/hooks/useProgress';
 import { useNotes } from '@/hooks/useNotes';
 import { useGuild } from '@/hooks/useGuild';
 import { useGuildProgress } from '@/hooks/useGuildProgress';
 import { useGuildBook } from '@/hooks/useGuildBooks';
 import { useHardcoverToken } from '@/hooks/useHardcover';
+import { useTopics } from '@/hooks/useTopics';
 import { NoteInput } from '@/components/NoteInput';
 import { NoteTimeline } from '@/components/NoteTimeline';
+import { TopicList } from '@/components/TopicList';
+import { TopicDetail } from '@/components/TopicDetail';
+import { TopicCreateDialog } from '@/components/TopicCreateDialog';
 import { BookCover } from '@/components/BookCover';
 import { ProgressBarWithGhosts } from '@/components/ProgressBarWithGhosts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,13 +36,24 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { CheckCircle, RotateCcw, BookOpen, Clock, Users } from 'lucide-react';
+import {
+  CheckCircle, RotateCcw, BookOpen, Clock, Users,
+  Play, Flag, Trash2, BookCheck, MessageSquare, StickyNote,
+} from 'lucide-react';
+
+type BookTab = 'notes' | 'topics';
 
 export default function BookPage() {
   const params = useParams();
+  const router = useRouter();
   const bookId = params.bookId as string;
 
-  const { book, loading: bookLoading, updateBookCoverUrl } = useGuildBook(bookId);
+  const { user } = useAuth();
+  const {
+    book, loading: bookLoading, updateBookCoverUrl,
+    removeBook, setCurrentBook, finishCurrentBook,
+    updateMemberOwnership, markBookCompleted,
+  } = useGuildBook(bookId);
   const { hasGuild, guild, members } = useGuild();
   const { hasToken: hasHardcoverToken } = useHardcoverToken();
 
@@ -52,9 +67,21 @@ export default function BookPage() {
     hiddenCount,
     loading: notesLoading,
     postNote,
+    editNote,
     deleteNote,
   } = useNotes(bookForHooks, progressSeconds);
 
+  const {
+    topics,
+    visibleTopics,
+    hiddenCount: topicsHiddenCount,
+    loading: topicsLoading,
+    createTopic,
+    deleteTopic,
+  } = useTopics(bookId, progressSeconds);
+
+  const [activeTab, setActiveTab] = useState<BookTab>('notes');
+  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [manualProgress, setManualProgress] = useState('');
@@ -84,8 +111,11 @@ export default function BookPage() {
   const handleUpdateProgress = async (percent: number) => {
     setUpdating(true);
     try {
-      // Convert percent to approximate seconds (we don't have total duration)
-      await updateProgress(percent * 100); // Store as percent * 100 for now
+      await updateProgress(percent * 100);
+      // Also sync to memberOwnership
+      if (updateMemberOwnership) {
+        await updateMemberOwnership(book.id, true, percent * 100);
+      }
       toast.success('Progress updated!');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update progress';
@@ -107,8 +137,15 @@ export default function BookPage() {
   };
 
   const handleMarkComplete = async () => {
-    await handleUpdateProgress(1); // 100%
-    toast.success('Marked as complete!');
+    setUpdating(true);
+    try {
+      await markBookCompleted(book.id);
+      toast.success('Marked as complete!');
+    } catch {
+      toast.error('Failed to mark complete');
+    } finally {
+      setUpdating(false);
+    }
   };
 
   const handleResetProgress = async () => {
@@ -129,10 +166,49 @@ export default function BookPage() {
     }
   };
 
+  const handleToggleOwnership = async () => {
+    const currentlyOwned = userOwnership?.hasBook ?? false;
+    try {
+      await updateMemberOwnership(book.id, !currentlyOwned);
+      toast.success(currentlyOwned ? 'Removed from your books' : 'Added to your books!');
+    } catch {
+      toast.error('Failed to update ownership');
+    }
+  };
+
+  const handleStartReading = async () => {
+    try {
+      await setCurrentBook(book.id);
+      toast.success('Started reading!');
+    } catch {
+      toast.error('Failed to start reading');
+    }
+  };
+
+  const handleFinishBook = async () => {
+    try {
+      await finishCurrentBook();
+      toast.success('Book finished!');
+    } catch {
+      toast.error('Failed to finish book');
+    }
+  };
+
+  const handleRemoveBook = async () => {
+    try {
+      await removeBook(book.id);
+      toast.success(`"${book.title}" removed from library`);
+      router.push('/library');
+    } catch {
+      toast.error('Failed to remove book');
+    }
+  };
+
   // Calculate progress from memberOwnership if available
-  const currentUserId = guild?.createdBy; // TODO: Get actual current user ID
+  const currentUserId = user?.uid;
   const userOwnership = currentUserId ? book.memberOwnership[currentUserId] : null;
   const progressPercent = userOwnership?.progressPercent ?? 0;
+  const userHasBook = userOwnership?.hasBook ?? false;
 
   // Ownership stats
   const ownershipCount = Object.values(book.memberOwnership).filter(
@@ -185,11 +261,63 @@ export default function BookPage() {
           {hasGuild && (
             <div className="mt-4">
               <ProgressBarWithGhosts
-                progressSeconds={progressPercent}
+                progressSeconds={0}
                 progressPercent={progressPercent}
-                totalDurationSeconds={100}
+                totalDurationSeconds={0}
                 ghosts={guildProgress}
+                percentOnly
               />
+            </div>
+          )}
+
+          {/* Book action buttons */}
+          {hasGuild && (
+            <div className="flex items-center gap-2 mt-4 flex-wrap">
+              <Button
+                variant={userHasBook ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={handleToggleOwnership}
+              >
+                <BookCheck className="w-4 h-4 mr-1" />
+                {userHasBook ? 'I Have This' : 'I Have This Book'}
+              </Button>
+
+              {book.status === 'queued' && (
+                <Button variant="outline" size="sm" onClick={handleStartReading}>
+                  <Play className="w-4 h-4 mr-1" />
+                  Start Reading
+                </Button>
+              )}
+
+              {book.status === 'reading' && (
+                <Button variant="outline" size="sm" onClick={handleFinishBook}>
+                  <Flag className="w-4 h-4 mr-1" />
+                  Finish Book
+                </Button>
+              )}
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-destructive">
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Remove
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Remove from library?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will remove &quot;{book.title}&quot; from the guild library for everyone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleRemoveBook} className="bg-destructive text-destructive-foreground">
+                      Remove
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           )}
         </div>
@@ -212,23 +340,93 @@ export default function BookPage() {
       {/* Main content grid */}
       {hasGuild && (
         <div className="grid gap-6 lg:grid-cols-[1fr,400px]">
-          {/* Notes timeline */}
+          {/* Left column: Notes / Topics */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Notes</h2>
-
-            {notesLoading ? (
-              <div className="text-center py-8 text-muted-foreground animate-pulse">
-                Loading notes...
+            {/* Tab bar */}
+            <div className="flex items-center justify-between">
+              <div className="flex bg-muted rounded-lg p-0.5">
+                <Button
+                  variant={activeTab === 'notes' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => { setActiveTab('notes'); setSelectedTopicId(null); }}
+                  className="text-xs gap-1"
+                >
+                  <StickyNote className="w-3 h-3" />
+                  Notes
+                  {hiddenCount > 0 && (
+                    <Badge variant="outline" className="ml-1 text-xs py-0 px-1">{notes.filter(n => n.isVisible).length}</Badge>
+                  )}
+                </Button>
+                <Button
+                  variant={activeTab === 'topics' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => { setActiveTab('topics'); setSelectedTopicId(null); }}
+                  className="text-xs gap-1"
+                >
+                  <MessageSquare className="w-3 h-3" />
+                  Topics
+                  {visibleTopics.length > 0 && (
+                    <Badge variant="outline" className="ml-1 text-xs py-0 px-1">{visibleTopics.length}</Badge>
+                  )}
+                </Button>
               </div>
-            ) : (
-              <NoteTimeline
-                notes={notes}
-                hiddenCount={hiddenCount}
-                guildId={guild?.id}
-                onDeleteNote={handleDeleteNote}
-                deleting={deleting}
+              {activeTab === 'topics' && !selectedTopicId && (
+                <TopicCreateDialog
+                  bookTitle={book.title}
+                  currentProgressTimestamp={progressSeconds}
+                  onCreateTopic={createTopic}
+                />
+              )}
+            </div>
+
+            {/* Notes view */}
+            {activeTab === 'notes' && (
+              notesLoading ? (
+                <div className="text-center py-8 text-muted-foreground animate-pulse">
+                  Loading notes...
+                </div>
+              ) : (
+                <NoteTimeline
+                  notes={notes}
+                  hiddenCount={hiddenCount}
+                  guildId={guild?.id}
+                  onDeleteNote={handleDeleteNote}
+                  onEditNote={editNote}
+                  deleting={deleting}
+                />
+              )
+            )}
+
+            {/* Topics view */}
+            {activeTab === 'topics' && !selectedTopicId && (
+              <TopicList
+                topics={topics}
+                hiddenCount={topicsHiddenCount}
+                loading={topicsLoading}
+                onSelectTopic={setSelectedTopicId}
               />
             )}
+
+            {/* Topic detail view */}
+            {activeTab === 'topics' && selectedTopicId && (() => {
+              const topic = topics.find((t) => t.id === selectedTopicId);
+              if (!topic) return null;
+              return (
+                <TopicDetail
+                  topicId={topic.id}
+                  topicTitle={topic.title}
+                  topicDescription={topic.description}
+                  topicCreatedByName={topic.createdByName}
+                  topicUnlockTimestamp={topic.unlockTimestamp}
+                  topicCreatedBy={topic.createdBy}
+                  bookId={book.id}
+                  currentUserId={currentUserId}
+                  userProgressTimestamp={progressSeconds}
+                  onBack={() => setSelectedTopicId(null)}
+                  onDeleteTopic={deleteTopic}
+                />
+              );
+            })()}
           </div>
 
           {/* Sidebar */}

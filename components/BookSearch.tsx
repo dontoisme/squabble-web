@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { Search, Plus, Swords, Headphones, X, Loader2, Users } from 'lucide-react';
 import { toast } from 'sonner';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, getDocs, collection, query as firestoreQuery, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -28,7 +28,7 @@ interface BookSearchProps {
 
 export function BookSearch({ onBookAdded }: BookSearchProps) {
   const { search, results, loading, error, clearResults, hasToken } = useHardcoverSearch();
-  const { guild, hasGuild } = useGuild();
+  const { guild, hasGuild, members } = useGuild();
   const { user } = useAuth();
 
   const [open, setOpen] = useState(false);
@@ -64,6 +64,26 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
     clearResults();
   };
 
+  // Build memberOwnership for all guild members (adder = hasBook: true)
+  const buildMemberOwnership = (adderId: string) => {
+    const ownership: Record<string, { hasBook: boolean; progressPercent: number }> = {};
+    members.forEach((member) => {
+      ownership[member.id] = {
+        hasBook: member.id === adderId,
+        progressPercent: 0,
+      };
+    });
+    return ownership;
+  };
+
+  // Get next queue position by counting queued books
+  const getNextQueuePosition = async (guildId: string) => {
+    const booksRef = collection(db, 'guilds', guildId, 'books');
+    const queueQuery = firestoreQuery(booksRef, where('status', '==', 'queued'));
+    const queueSnapshot = await getDocs(queueQuery);
+    return queueSnapshot.size + 1;
+  };
+
   const handleAddBook = async (book: HardcoverBook) => {
     if (!guild?.id || !user) {
       toast.error('You must be in a guild to add books');
@@ -74,10 +94,18 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
 
     try {
       const bookId = `hc_${book.hardcoverId}`;
-      const booksRef = collection(db, 'guilds', guild.id, 'books');
 
-      await addDoc(booksRef, {
-        id: bookId,
+      // Check if book already exists
+      const bookRef = doc(db, 'guilds', guild.id, 'books', bookId);
+      const existingDoc = await getDoc(bookRef);
+      if (existingDoc.exists()) {
+        toast.error('This book is already in the guild library');
+        return;
+      }
+
+      const queuePosition = await getNextQueuePosition(guild.id);
+
+      await setDoc(bookRef, {
         title: book.title,
         author: book.author,
         hardcoverId: book.hardcoverId,
@@ -88,13 +116,8 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
         addedBy: user.uid,
         addedAt: serverTimestamp(),
         status: 'queued',
-        queuePosition: 999,
-        memberOwnership: {
-          [user.uid]: {
-            hasBook: false,
-            progressPercent: 0,
-          },
-        },
+        queuePosition,
+        memberOwnership: buildMemberOwnership(user.uid),
       });
 
       toast.success(`"${book.title}" added to Quest Board!`);
@@ -122,13 +145,19 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
     setAdding(`epic-${book.hardcoverId}`);
 
     try {
-      // For now, just add this book with a note that it's an epic quest
-      // In the future, we could search for all books in the series
       const bookId = `hc_${book.hardcoverId}`;
-      const booksRef = collection(db, 'guilds', guild.id, 'books');
 
-      await addDoc(booksRef, {
-        id: bookId,
+      // Check if book already exists
+      const bookRef = doc(db, 'guilds', guild.id, 'books', bookId);
+      const existingDoc = await getDoc(bookRef);
+      if (existingDoc.exists()) {
+        toast.error('This book is already in the guild library');
+        return;
+      }
+
+      const queuePosition = await getNextQueuePosition(guild.id);
+
+      await setDoc(bookRef, {
         title: book.title,
         author: book.author,
         hardcoverId: book.hardcoverId,
@@ -137,17 +166,12 @@ export function BookSearch({ onBookAdded }: BookSearchProps) {
         series: book.series,
         seriesPosition: book.seriesPosition,
         seriesBooksCount: book.seriesBooksCount,
-        isEpicQuest: true, // Mark as epic quest
+        isEpicQuest: true,
         addedBy: user.uid,
         addedAt: serverTimestamp(),
         status: 'queued',
-        queuePosition: 999,
-        memberOwnership: {
-          [user.uid]: {
-            hasBook: false,
-            progressPercent: 0,
-          },
-        },
+        queuePosition,
+        memberOwnership: buildMemberOwnership(user.uid),
       });
 
       toast.success(`Epic Quest "${book.series}" (${book.seriesBooksCount} books) added!`);

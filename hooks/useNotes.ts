@@ -5,6 +5,7 @@ import {
   collection,
   doc,
   addDoc,
+  updateDoc,
   deleteDoc,
   query,
   where,
@@ -104,6 +105,32 @@ export function useNotes(book: Book | undefined, userProgressSeconds: number) {
     await addDoc(commentsRef, noteData);
   }, [user, guildId, book]);
 
+  // Edit own note
+  const editNote = useCallback(async (noteId: string, newText: string) => {
+    if (!user || !guildId) {
+      throw new Error('Cannot edit note');
+    }
+
+    const note = allNotes.find(n => n.id === noteId);
+    if (!note) {
+      throw new Error('Note not found');
+    }
+    if (note.userId !== user.uid) {
+      throw new Error('Can only edit your own notes');
+    }
+
+    const trimmedText = newText.trim();
+    if (!trimmedText) {
+      throw new Error('Note cannot be empty');
+    }
+    if (trimmedText.length > NOTE_MAX_CHARS) {
+      throw new Error(`Note exceeds ${NOTE_MAX_CHARS} characters`);
+    }
+
+    const noteRef = doc(db, 'guilds', guildId, 'comments', noteId);
+    await updateDoc(noteRef, { text: trimmedText });
+  }, [user, guildId, allNotes]);
+
   // Delete own note
   const deleteNote = useCallback(async (noteId: string) => {
     if (!user || !guildId) {
@@ -129,6 +156,7 @@ export function useNotes(book: Book | undefined, userProgressSeconds: number) {
     hiddenCount: hiddenNotes.length,
     loading,
     postNote,
+    editNote,
     deleteNote,
   };
 }

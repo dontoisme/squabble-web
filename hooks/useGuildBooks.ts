@@ -3,12 +3,19 @@ import {
   collection,
   onSnapshot,
   query,
+  where,
   orderBy,
   doc,
+  getDoc,
+  getDocs,
   updateDoc,
+  deleteDoc,
+  writeBatch,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useGuild } from './useGuild';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * Book status in the guild library
@@ -124,6 +131,7 @@ function sortGuildBooks(books: GuildBook[]): GuildBook[] {
  */
 export function useGuildBooks() {
   const { guild, hasGuild } = useGuild();
+  const { user } = useAuth();
   const [books, setBooks] = useState<GuildBook[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -146,8 +154,8 @@ export function useGuildBooks() {
       (snapshot) => {
         const guildBooks: GuildBook[] = [];
 
-        snapshot.docs.forEach((doc) => {
-          const book = guildBookFromFirestore(doc.id, doc.data());
+        snapshot.docs.forEach((docSnap) => {
+          const book = guildBookFromFirestore(docSnap.id, docSnap.data());
           if (book) {
             guildBooks.push(book);
           }
@@ -182,6 +190,133 @@ export function useGuildBooks() {
     }
   }, [guild?.id]);
 
+  // Remove a book from the guild library
+  const removeBook = useCallback(async (bookId: string) => {
+    if (!guild?.id) return;
+    const bookRef = doc(db, 'guilds', guild.id, 'books', bookId);
+    await deleteDoc(bookRef);
+  }, [guild?.id]);
+
+  // Set a book as the current reading book
+  const setCurrentBook = useCallback(async (bookId: string) => {
+    if (!guild?.id) return;
+    const booksRef = collection(db, 'guilds', guild.id, 'books');
+    const batch = writeBatch(db);
+
+    // Move any currently reading book back to queued
+    const currentQuery = query(booksRef, where('status', '==', 'reading'));
+    const currentSnapshot = await getDocs(currentQuery);
+    currentSnapshot.docs.forEach((bookDoc) => {
+      if (bookDoc.id !== bookId) {
+        batch.update(bookDoc.ref, { status: 'queued', queuePosition: 1 });
+      }
+    });
+
+    // Set the new book as reading
+    const bookRef = doc(db, 'guilds', guild.id, 'books', bookId);
+    batch.update(bookRef, { status: 'reading', queuePosition: 0 });
+
+    // Update guild's currentBookTitle
+    const bookDoc = await getDoc(bookRef);
+    if (bookDoc.exists()) {
+      const guildRef = doc(db, 'guilds', guild.id);
+      batch.update(guildRef, {
+        currentBookId: bookId,
+        currentBookTitle: bookDoc.data().title,
+      });
+    }
+
+    await batch.commit();
+  }, [guild?.id]);
+
+  // Finish the current book and auto-promote next in queue
+  const finishCurrentBook = useCallback(async () => {
+    if (!guild?.id) return;
+    const booksRef = collection(db, 'guilds', guild.id, 'books');
+    const batch = writeBatch(db);
+
+    const currentQuery = query(booksRef, where('status', '==', 'reading'));
+    const currentSnapshot = await getDocs(currentQuery);
+    if (currentSnapshot.empty) return;
+
+    const currentBookDoc = currentSnapshot.docs[0];
+    batch.update(currentBookDoc.ref, {
+      status: 'finished',
+      finishedAt: serverTimestamp(),
+      queuePosition: -1,
+    });
+
+    // Find next in queue
+    const queueQuery = query(
+      booksRef,
+      where('status', '==', 'queued'),
+      orderBy('queuePosition', 'asc')
+    );
+    const queueSnapshot = await getDocs(queueQuery);
+    const guildRef = doc(db, 'guilds', guild.id);
+
+    if (!queueSnapshot.empty) {
+      const nextBookDoc = queueSnapshot.docs[0];
+      batch.update(nextBookDoc.ref, { status: 'reading', queuePosition: 0 });
+      batch.update(guildRef, {
+        currentBookId: nextBookDoc.id,
+        currentBookTitle: nextBookDoc.data().title,
+      });
+    } else {
+      batch.update(guildRef, { currentBookId: null, currentBookTitle: null });
+    }
+
+    await batch.commit();
+  }, [guild?.id]);
+
+  // Reorder the queue
+  const reorderQueue = useCallback(async (bookIds: string[]) => {
+    if (!guild?.id) return;
+    const batch = writeBatch(db);
+    bookIds.forEach((bookId, index) => {
+      const bookRef = doc(db, 'guilds', guild.id!, 'books', bookId);
+      batch.update(bookRef, { queuePosition: index + 1 });
+    });
+    await batch.commit();
+  }, [guild?.id]);
+
+  // Update a member's ownership status for a book
+  const updateMemberOwnership = useCallback(async (
+    bookId: string,
+    hasBook: boolean,
+    progressPercent?: number
+  ) => {
+    if (!guild?.id || !user?.uid) return;
+    const bookRef = doc(db, 'guilds', guild.id, 'books', bookId);
+    const updateData: Record<string, unknown> = {
+      [`memberOwnership.${user.uid}.hasBook`]: hasBook,
+      [`memberOwnership.${user.uid}.lastSynced`]: serverTimestamp(),
+    };
+    if (progressPercent !== undefined) {
+      updateData[`memberOwnership.${user.uid}.progressPercent`] = progressPercent;
+    }
+    await updateDoc(bookRef, updateData);
+  }, [guild?.id, user?.uid]);
+
+  // Mark a book as completed
+  const markBookCompleted = useCallback(async (bookId: string) => {
+    if (!guild?.id || !user?.uid) return;
+    const bookRef = doc(db, 'guilds', guild.id, 'books', bookId);
+    const bookDoc = await getDoc(bookRef);
+    if (!bookDoc.exists()) return;
+
+    const data = bookDoc.data();
+    const currentOwnership = data.memberOwnership?.[user.uid] || {};
+    const currentCount = (currentOwnership.completionCount as number) || 0;
+
+    await updateDoc(bookRef, {
+      [`memberOwnership.${user.uid}.isCompleted`]: true,
+      [`memberOwnership.${user.uid}.completedAt`]: serverTimestamp(),
+      [`memberOwnership.${user.uid}.completionCount`]: currentCount + 1,
+      [`memberOwnership.${user.uid}.progressPercent`]: 100,
+    });
+  }, [guild?.id, user?.uid]);
+
   return {
     books,
     currentBook,
@@ -191,6 +326,12 @@ export function useGuildBooks() {
     error,
     hasBooks: books.length > 0,
     updateBookCoverUrl,
+    removeBook,
+    setCurrentBook,
+    finishCurrentBook,
+    reorderQueue,
+    updateMemberOwnership,
+    markBookCompleted,
   };
 }
 
@@ -198,7 +339,11 @@ export function useGuildBooks() {
  * Get a book by ID from the guild books
  */
 export function useGuildBook(bookId: string | undefined) {
-  const { books, loading, error, updateBookCoverUrl } = useGuildBooks();
+  const {
+    books, loading, error, updateBookCoverUrl,
+    removeBook, setCurrentBook, finishCurrentBook,
+    updateMemberOwnership, markBookCompleted,
+  } = useGuildBooks();
 
   const book = bookId ? books.find((b) => b.id === bookId) : null;
 
@@ -207,5 +352,10 @@ export function useGuildBook(bookId: string | undefined) {
     loading,
     error,
     updateBookCoverUrl,
+    removeBook,
+    setCurrentBook,
+    finishCurrentBook,
+    updateMemberOwnership,
+    markBookCompleted,
   };
 }
