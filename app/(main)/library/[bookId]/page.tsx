@@ -20,7 +20,6 @@ import { BookCover } from '@/components/BookCover';
 import { ProgressBarWithGhosts } from '@/components/ProgressBarWithGhosts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -379,6 +378,16 @@ export default function BookPage() {
               )}
             </div>
 
+            {/* Note input — always accessible at top of Notes tab */}
+            {activeTab === 'notes' && (
+              <NoteInput
+                book={{ id: book.id, title: book.title, totalDurationSeconds: 0, chapters: [] }}
+                currentProgressSeconds={progressPercent}
+                onPostNote={postNote}
+                disabled={!hasGuild}
+              />
+            )}
+
             {/* Notes view */}
             {activeTab === 'notes' && (
               notesLoading ? (
@@ -509,15 +518,6 @@ export default function BookPage() {
               </CardContent>
             </Card>
 
-            <Separator />
-
-            {/* Note input */}
-            <NoteInput
-              book={{ id: book.id, title: book.title, totalDurationSeconds: 0, chapters: [] }}
-              currentProgressSeconds={progressPercent}
-              onPostNote={postNote}
-              disabled={!hasGuild}
-            />
           </div>
         </div>
       )}
