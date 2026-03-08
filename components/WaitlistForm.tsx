@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { collection, addDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,22 +30,29 @@ export function WaitlistForm({ source = 'landing' }: { source?: string }) {
 
     setLoading(true);
     try {
-      const waitlistRef = collection(db, 'waitlist');
-      const existing = await getDocs(query(waitlistRef, where('email', '==', email.toLowerCase().trim())));
-      if (!existing.empty) {
-        setSubmitted(true);
-        return;
-      }
+      const normalized = email.toLowerCase().trim();
+      const hashBuffer = await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(normalized),
+      );
+      const emailHash = Array.from(new Uint8Array(hashBuffer))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
 
-      await addDoc(waitlistRef, {
-        email: email.toLowerCase().trim(),
+      await setDoc(doc(db, 'waitlist', emailHash), {
+        email: normalized,
         platform,
         source,
         createdAt: Timestamp.now(),
       });
       setSubmitted(true);
-    } catch {
-      toast.error('Something went wrong. Please try again.');
+    } catch (err: unknown) {
+      // Rules only allow create, not update — permission-denied means duplicate
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'permission-denied') {
+        setSubmitted(true);
+      } else {
+        toast.error('Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
