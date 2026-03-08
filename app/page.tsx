@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { WaitlistForm } from '@/components/WaitlistForm';
 
 function FeatureCard({
   icon,
@@ -75,19 +76,17 @@ export default function LandingPage() {
             Form a guild, pick your next audiobook, and leave hidden notes
             for your friends to discover as they listen.
           </p>
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex flex-col items-center gap-4">
             {loading ? null : user ? (
               <Button size="lg" className="text-base px-8" asChild>
                 <Link href="/library">Go to Library</Link>
               </Button>
             ) : (
               <>
-                <Button size="lg" className="text-base px-8" asChild>
-                  <Link href="/signup">Get Started</Link>
-                </Button>
-                <Button size="lg" variant="outline" className="text-base px-8" asChild>
-                  <Link href="/login">Log In</Link>
-                </Button>
+                <p className="text-sm text-muted-foreground -mb-1">
+                  Sign up for early access to the alpha.
+                </p>
+                <WaitlistForm source="hero" />
               </>
             )}
           </div>
@@ -161,9 +160,7 @@ export default function LandingPage() {
               <Link href="/library">Open Library</Link>
             </Button>
           ) : (
-            <Button size="lg" className="text-base px-8" asChild>
-              <Link href="/signup">Create Your Guild</Link>
-            </Button>
+            <WaitlistForm source="bottom-cta" />
           )}
         </div>
       </section>
