@@ -20,11 +20,12 @@ export function WaitlistForm({ source = 'landing' }: { source?: string }) {
   const [platform, setPlatform] = useState<Platform | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [showPlatformError, setShowPlatformError] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!platform) {
-      toast.error('Please select a platform.');
+      setShowPlatformError(true);
       return;
     }
 
@@ -68,6 +69,31 @@ export function WaitlistForm({ source = 'landing' }: { source?: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto flex flex-col gap-4">
+      <div className="flex flex-col items-center gap-1">
+        <span className={`text-sm font-medium transition-colors ${
+          showPlatformError ? 'text-red-400' : 'text-muted-foreground'
+        }`}>
+          I want early access on:
+        </span>
+        <div className={`flex items-center gap-2 rounded-lg px-2 py-1 transition-all ${
+          showPlatformError ? 'ring-1 ring-red-400/60' : ''
+        }`}>
+          {(Object.keys(platformLabels) as Platform[]).map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => { setPlatform(p); setShowPlatformError(false); }}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${
+                platform === p
+                  ? 'border-copper bg-copper/10 text-copper'
+                  : 'border-border text-muted-foreground hover:border-copper/50'
+              }`}
+            >
+              {platformLabels[p]}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="flex gap-2">
         <Input
           type="email"
@@ -80,23 +106,6 @@ export function WaitlistForm({ source = 'landing' }: { source?: string }) {
         <Button type="submit" size="lg" disabled={loading} className="text-base px-6">
           {loading ? 'Joining...' : 'Join the Alpha'}
         </Button>
-      </div>
-      <div className="flex items-center justify-center gap-2">
-        <span className="text-sm text-muted-foreground">Platform:</span>
-        {(Object.keys(platformLabels) as Platform[]).map((p) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => setPlatform(p)}
-            className={`rounded-full px-3 py-1 text-sm border transition-colors ${
-              platform === p
-                ? 'border-copper bg-copper/10 text-copper'
-                : 'border-border text-muted-foreground hover:border-copper/50'
-            }`}
-          >
-            {platformLabels[p]}
-          </button>
-        ))}
       </div>
     </form>
   );
