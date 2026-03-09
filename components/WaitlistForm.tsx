@@ -35,11 +35,19 @@ export function WaitlistForm({
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem('squabble:waitlist:submitted') === 'true') {
-      setSubmitted(true);
-      setInviteCode(localStorage.getItem('squabble:waitlist:inviteCode'));
-      setGuildName(localStorage.getItem('squabble:waitlist:guildName'));
+    function syncFromStorage() {
+      if (localStorage.getItem('squabble:waitlist:submitted') === 'true') {
+        setSubmitted(true);
+        setInviteCode(localStorage.getItem('squabble:waitlist:inviteCode'));
+        setGuildName(localStorage.getItem('squabble:waitlist:guildName'));
+      }
     }
+
+    syncFromStorage();
+
+    // Sync across instances on the same page
+    window.addEventListener('waitlist:submitted', syncFromStorage);
+    return () => window.removeEventListener('waitlist:submitted', syncFromStorage);
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -78,6 +86,7 @@ export function WaitlistForm({
         setGuildName(data.guildName);
       }
       setSubmitted(true);
+      window.dispatchEvent(new Event('waitlist:submitted'));
     } catch {
       toast.error('Something went wrong. Please try again.');
     } finally {
