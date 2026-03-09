@@ -19,9 +19,9 @@ import { db } from '@/lib/firebase/config';
 import { Guild, GuildMember } from '@/lib/firebase/types';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Generate invite code matching iOS pattern (excludes 0, O, I, 1)
+// Generate invite code matching RN shared pattern (excludes 0, O, I, 1, L)
 function generateInviteCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   let code = '';
   for (let i = 0; i < 6; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));

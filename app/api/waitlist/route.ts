@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
-const INVITE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const INVITE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
 function generateInviteCode(): string {
   let code = '';
