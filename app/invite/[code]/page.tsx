@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGuild } from '@/hooks/useGuild';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { WaitlistForm } from '@/components/WaitlistForm';
 import { Users, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -176,18 +177,15 @@ export default function InvitePage() {
               )}
             </Button>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <p className="text-sm text-muted-foreground text-center">
-                Sign in or create an account to join
+                Sign up for early access and join this guild when we launch.
               </p>
-              <div className="flex gap-2">
-                <Link href={`/login?redirect=/invite/${code}`} className="flex-1">
-                  <Button variant="outline" className="w-full">Log In</Button>
-                </Link>
-                <Link href={`/signup?redirect=/invite/${code}`} className="flex-1">
-                  <Button className="w-full">Sign Up</Button>
-                </Link>
-              </div>
+              <WaitlistForm
+                source={`invite:${code}`}
+                referredByGuildId={guild.id}
+                referredGuildName={guild.name}
+              />
             </div>
           )}
         </CardContent>

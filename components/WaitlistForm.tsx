@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { doc, setDoc, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { Check, Copy } from 'lucide-react';
 
 type Platform = 'ios' | 'android' | 'both';
 
@@ -15,16 +14,31 @@ const platformLabels: Record<Platform, string> = {
   both: 'Both',
 };
 
-export function WaitlistForm({ source = 'landing' }: { source?: string }) {
+interface WaitlistFormProps {
+  source?: string;
+  referredByGuildId?: string;
+  referredGuildName?: string;
+}
+
+export function WaitlistForm({
+  source = 'landing',
+  referredByGuildId,
+  referredGuildName,
+}: WaitlistFormProps) {
   const [email, setEmail] = useState('');
   const [platform, setPlatform] = useState<Platform | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showPlatformError, setShowPlatformError] = useState(false);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [guildName, setGuildName] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem('squabble:waitlist:submitted') === 'true') {
       setSubmitted(true);
+      setInviteCode(localStorage.getItem('squabble:waitlist:inviteCode'));
+      setGuildName(localStorage.getItem('squabble:waitlist:guildName'));
     }
   }, []);
 
@@ -37,41 +51,97 @@ export function WaitlistForm({ source = 'landing' }: { source?: string }) {
 
     setLoading(true);
     try {
-      const normalized = email.toLowerCase().trim();
-      const hashBuffer = await crypto.subtle.digest(
-        'SHA-256',
-        new TextEncoder().encode(normalized),
-      );
-      const emailHash = Array.from(new Uint8Array(hashBuffer))
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join('');
-
-      await setDoc(doc(db, 'waitlist', emailHash), {
-        email: normalized,
-        platform,
-        source,
-        createdAt: Timestamp.now(),
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          platform,
+          source,
+          referredByGuildId,
+        }),
       });
-      localStorage.setItem('squabble:waitlist:submitted', 'true');
-      setSubmitted(true);
-    } catch (err: unknown) {
-      // Rules only allow create, not update — permission-denied means duplicate
-      if (err && typeof err === 'object' && 'code' in err && err.code === 'permission-denied') {
-        localStorage.setItem('squabble:waitlist:submitted', 'true');
-        setSubmitted(true);
-      } else {
-        toast.error('Something went wrong. Please try again.');
+
+      if (!res.ok) {
+        throw new Error('Request failed');
       }
+
+      const data = await res.json();
+
+      localStorage.setItem('squabble:waitlist:submitted', 'true');
+      if (data.inviteCode) {
+        localStorage.setItem('squabble:waitlist:inviteCode', data.inviteCode);
+        setInviteCode(data.inviteCode);
+      }
+      if (data.guildName) {
+        localStorage.setItem('squabble:waitlist:guildName', data.guildName);
+        setGuildName(data.guildName);
+      }
+      setSubmitted(true);
+    } catch {
+      toast.error('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   }
 
+  function handleCopy() {
+    if (!inviteCode) return;
+    const url = `${window.location.origin}/invite/${inviteCode}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   if (submitted) {
+    // Referred user — simple confirmation
+    if (referredByGuildId) {
+      return (
+        <div className="text-center space-y-2">
+          <p className="text-copper font-medium text-lg">
+            You&apos;re on the list!
+          </p>
+          {referredGuildName && (
+            <p className="text-sm text-muted-foreground">
+              You&apos;ll join <span className="text-foreground font-medium">{referredGuildName}</span> when we launch.
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    // Direct signup — show invite link
     return (
-      <p className="text-copper font-medium text-lg">
-        You&apos;re on the list! We&apos;ll be in touch soon.
-      </p>
+      <div className="text-center space-y-3">
+        <p className="text-copper font-medium text-lg">
+          You&apos;re on the list!
+        </p>
+        {guildName && (
+          <p className="text-sm text-muted-foreground">
+            Your guild <span className="text-foreground font-medium">{guildName}</span> is ready.
+          </p>
+        )}
+        {inviteCode && (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Share this link to invite friends to your guild:
+            </p>
+            <button
+              onClick={handleCopy}
+              className="inline-flex items-center gap-2 rounded-lg border border-copper/30 bg-copper/5 px-4 py-2 text-sm font-mono text-copper hover:bg-copper/10 transition-colors"
+            >
+              {typeof window !== 'undefined'
+                ? `${window.location.origin}/invite/${inviteCode}`
+                : `/invite/${inviteCode}`}
+              {copied ? (
+                <Check className="w-4 h-4 text-green-400" />
+              ) : (
+                <Copy className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+        )}
+      </div>
     );
   }
 
