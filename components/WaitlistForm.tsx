@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,12 @@ export function WaitlistForm({ source = 'landing' }: { source?: string }) {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showPlatformError, setShowPlatformError] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem('squabble:waitlist:submitted') === 'true') {
+      setSubmitted(true);
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,10 +52,12 @@ export function WaitlistForm({ source = 'landing' }: { source?: string }) {
         source,
         createdAt: Timestamp.now(),
       });
+      localStorage.setItem('squabble:waitlist:submitted', 'true');
       setSubmitted(true);
     } catch (err: unknown) {
       // Rules only allow create, not update — permission-denied means duplicate
       if (err && typeof err === 'object' && 'code' in err && err.code === 'permission-denied') {
+        localStorage.setItem('squabble:waitlist:submitted', 'true');
         setSubmitted(true);
       } else {
         toast.error('Something went wrong. Please try again.');
