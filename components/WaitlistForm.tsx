@@ -181,7 +181,7 @@ export function WaitlistForm({
           ))}
         </div>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <Input
           type="email"
           required
@@ -190,7 +190,7 @@ export function WaitlistForm({
           onChange={(e) => setEmail(e.target.value)}
           className="flex-1 h-11"
         />
-        <Button type="submit" size="lg" disabled={loading} className="text-base px-6">
+        <Button type="submit" size="lg" disabled={loading} className="text-base px-6 w-full sm:w-auto">
           {loading ? 'Joining...' : 'Join the Alpha'}
         </Button>
       </div>

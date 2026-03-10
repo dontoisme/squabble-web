@@ -148,7 +148,7 @@ export default function LandingPage() {
 
       {/* CTA */}
       <section className="container mx-auto px-4 pb-24">
-        <div className="max-w-2xl mx-auto text-center bg-card border border-border rounded-3xl p-12">
+        <div className="max-w-2xl mx-auto text-center bg-card border border-border rounded-3xl p-6 sm:p-12">
           <h2 className="text-3xl font-bold text-foreground mb-4">
             Ready to start your quest?
           </h2>
