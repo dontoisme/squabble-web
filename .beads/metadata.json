@@ -2,5 +2,7 @@
   "database": "dolt",
   "backend": "dolt",
   "dolt_mode": "server",
-  "dolt_database": "squabble_web"
+  "dolt_database": "squabble_web",
+  "project_id": "e51f91f9-4c32-4f37-9d12-b99f2f769b4d",
+  "global_dolt_database": "beads_global"
 }
