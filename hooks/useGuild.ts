@@ -101,6 +101,15 @@ export function useGuild() {
         memberCount: 1,
       });
 
+      // Invite-code lookup doc — joins resolve codes through this collection
+      // because guild list queries are denied by the security rules.
+      // Must be written after the guild doc (rules validate the mapping
+      // against the guild's own inviteCode).
+      await setDoc(doc(db, 'inviteCodes', inviteCode), {
+        guildId,
+        createdAt: serverTimestamp(),
+      });
+
       // Add creator as owner member
       const memberRef = doc(db, 'guilds', guildId, 'members', user.uid);
       await setDoc(memberRef, {
@@ -129,17 +138,34 @@ export function useGuild() {
 
     setError(null);
     try {
-      // Find guild by invite code (case-insensitive)
-      const guildsRef = collection(db, 'guilds');
-      const q = query(guildsRef, where('inviteCode', '==', inviteCode.toUpperCase()));
-      const snap = await getDocs(q);
-
-      if (snap.empty) {
-        throw new Error('Invalid invite code');
+      // Resolve the code via the lookup collection — guild list queries are
+      // denied by the security rules, so /inviteCodes/{CODE} -> { guildId }
+      // is the only client-readable path from a code to a guild.
+      const code = inviteCode.toUpperCase();
+      let foundGuildId: string;
+      const codeSnap = await getDoc(doc(db, 'inviteCodes', code));
+      if (codeSnap.exists()) {
+        foundGuildId = codeSnap.data().guildId as string;
+        const guildSnap = await getDoc(doc(db, 'guilds', foundGuildId));
+        if (!guildSnap.exists()) {
+          throw new Error('Invalid invite code');
+        }
+      } else {
+        // Legacy fallback for guilds created before /inviteCodes existed and
+        // not yet backfilled. Denied (permission-denied) once the hardened
+        // rules are deployed — treat that the same as an unknown code.
+        try {
+          const guildsRef = collection(db, 'guilds');
+          const q = query(guildsRef, where('inviteCode', '==', code));
+          const snap = await getDocs(q);
+          if (snap.empty) {
+            throw new Error('Invalid invite code');
+          }
+          foundGuildId = snap.docs[0].id;
+        } catch {
+          throw new Error('Invalid invite code');
+        }
       }
-
-      const guildDoc = snap.docs[0];
-      const foundGuildId = guildDoc.id;
 
       // Check if already a member
       const memberRef = doc(db, 'guilds', foundGuildId, 'members', user.uid);

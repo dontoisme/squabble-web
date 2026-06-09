@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { Guild } from '@/lib/firebase/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,10 +27,25 @@ export default function InvitePage() {
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch guild by invite code
+  // Fetch guild by invite code. Codes resolve via /inviteCodes/{CODE} ->
+  // { guildId } — guild list queries are denied by the security rules.
   useEffect(() => {
     async function fetchGuild() {
       try {
+        const codeSnap = await getDoc(doc(db, 'inviteCodes', code));
+        if (codeSnap.exists()) {
+          const guildId = codeSnap.data().guildId as string;
+          const guildSnap = await getDoc(doc(db, 'guilds', guildId));
+          if (guildSnap.exists()) {
+            setGuild({ id: guildSnap.id, ...guildSnap.data() } as Guild);
+          } else {
+            setError('Invalid invite code');
+          }
+          return;
+        }
+
+        // Legacy fallback for guilds created before /inviteCodes existed and
+        // not yet backfilled. Denied once the hardened rules are deployed.
         const guildsRef = collection(db, 'guilds');
         const q = query(guildsRef, where('inviteCode', '==', code));
         const snap = await getDocs(q);
