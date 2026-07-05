@@ -85,6 +85,10 @@ export default function MainLayout({
                 {user.email}
               </div>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/help">Help &amp; guides</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => {
                   signOut();
