@@ -1,0 +1,43 @@
+---
+title: "Sync and Progress Issues"
+description: "Troubleshoot cross-device progress sync, stale Ghost Markers, and the furthest-position banner."
+order: 3
+---
+
+Your listening position syncs to the cloud so you can pick up on another device, and your guildmates' Ghost Markers update the same way. This page covers what to do when either looks out of date.
+
+## Progress isn't showing up on another device
+
+Cross-device sync isn't instant — Squabble saves your position on a regular cycle rather than continuously, so a small lag between devices is normal.
+
+<Steps>
+  <Step title="Give it a moment">
+    Position syncs periodically, not every second. Wait a few seconds after switching devices before assuming it didn't work.
+  </Step>
+  <Step title="Pause before you switch">
+    Tapping pause forces an immediate sync, which is the fastest way to guarantee your other device picks up the right spot.
+  </Step>
+  <Step title="Confirm you're signed into the same account">
+    Progress follows your account, not the file itself — a book imported separately on two devices under different accounts won't share progress.
+  </Step>
+</Steps>
+
+## Ghost Markers look stuck
+
+Guildmates' Ghost Markers update on a periodic cycle too, especially when their app is backgrounded rather than open and playing. Seeing a marker sit still for a bit right after someone starts listening again is normal — give it up to a minute to catch up. A marker that stays frozen much longer usually means that guildmate's app hasn't synced recently (closed, offline, or backgrounded for a long stretch), not a problem with your own device.
+
+## The "jump to furthest" banner
+
+When you open a book, Squabble checks whether you've listened further than your current position before — for example, if you rewound to relisten to a scene. If so, you'll see a banner offering to jump to your furthest point. Tap it to skip ahead, or dismiss it to keep listening from where you are.
+
+<Callout variant="spoiler">
+Furthest Position is also the anchor for spoiler gating — [Timestamp Comments](/help/player/timestamp-comments) only unlock once your Furthest Position passes them. Jumping ahead with this banner can reveal comments that were previously hidden.
+</Callout>
+
+## If your furthest position looks wrong
+
+- Make sure you're on the latest version — a past bug could briefly reset this banner right after a reread or a progress reset.
+- Starting a New Read+ deliberately resets your furthest position for that read-through. That's expected, not a bug.
+- Reopen the book. The banner is evaluated when the player loads a book, not continuously while you scrub around.
+
+If progress still looks wrong after a few app restarts, exporting a diagnostics log and reaching out through [contact support](/help/troubleshooting/contact-support) helps us see what's happening on your account.

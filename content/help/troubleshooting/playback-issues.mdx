@@ -1,0 +1,50 @@
+---
+title: "Playback Issues"
+description: "Fix lock screen controls, numbered chapter names, audio stutter, and background playback problems."
+order: 2
+---
+
+Most playback hiccups clear up with a relaunch or a settings check. This page covers the ones people run into most: lock screen controls, chapter names, stutter at the start of a track, and background audio.
+
+## Lock screen controls missing or unresponsive
+
+If play/pause and skip controls disappear from your lock screen or car display, try these in order.
+
+<Steps>
+  <Step title="Force-quit and reopen Squabble">
+    Fully close the app from your device's app switcher rather than just backgrounding it, then relaunch. This re-registers playback controls with your lock screen.
+  </Step>
+  <Step title="Start playback from inside the app">
+    Open the MiniPlayer or full player and tap play once. This refreshes the metadata your lock screen and car display read from.
+  </Step>
+  <Step title="Check notification permission (Android 13+)">
+    Lock screen and media controls depend on notification permission. Confirm it's enabled for Squabble in your device's app settings.
+  </Step>
+</Steps>
+
+If this keeps happening after trying all three, exporting a diagnostics log before you [contact support](/help/troubleshooting/contact-support) makes it much easier for us to track down.
+
+## Chapter names show as numbers like "002"
+
+<Callout variant="warning" title="Known limitation">
+Some audiobooks show chapters as "002", "003", and so on instead of named titles. This comes from the chapter metadata baked into the source audio file, not from Squabble, and can't be fixed on our end without re-encoding the file. Playback, skipping, and resuming all still work normally — only the label is affected.
+</Callout>
+
+## Audio stutters or skips right when I hit play
+
+A brief stutter at the very start of a track is almost always a one-off buffering moment, not lost audio — give it a few seconds before assuming something's wrong. If it happens often:
+
+- Make sure you're on the latest version of Squabble. Older builds had a play-button stutter at track start that's since been fixed.
+- Keep only one audio app active. Switching Bluetooth or AirPlay output between apps can interrupt a track mid-buffer.
+- Free up device storage. A nearly full device can slow down how quickly a track loads before playback starts.
+
+## Background audio tips
+
+Squabble is built to keep playing after you lock your phone or switch apps.
+
+- Leave background app refresh (or background audio) enabled for Squabble so playback continues when the app isn't in the foreground.
+- On iOS, you don't need to force-quit the app after a call or notification interrupts playback — reopening Squabble resumes where it left off.
+
+<Callout variant="tip">
+On Android, some manufacturers aggressively restrict background apps to save battery. If audio stops unexpectedly when your screen is off, exclude Squabble from your device's battery optimization settings.
+</Callout>

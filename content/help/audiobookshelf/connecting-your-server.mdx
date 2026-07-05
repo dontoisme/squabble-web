@@ -1,0 +1,46 @@
+---
+title: "Connecting Your Server"
+description: "Link your self-hosted Audiobookshelf server to Squabble using its address and your login."
+order: 2
+---
+
+Connecting an [Audiobookshelf](/help/audiobookshelf/what-is-audiobookshelf) server takes its address and your login on that server. This page walks through the connect screen and what happens right after. <PlatformBadge platform="mobile" />
+
+## Before you connect
+
+You'll need your server already running, plus:
+
+- Its **Server URL** — the web address you use to reach it, including the port if it needs one (for example, `http://192.168.1.10:13378`).
+- Your **Username** and **Password** on that server.
+
+Your phone needs to actually be able to reach the server — on the same network, over Tailscale, or through whatever remote access you've set up for it.
+
+## Connect your server
+
+<Steps>
+  <Step title="Enter your server URL">
+    Type in the address exactly as you use it to reach the server. Tap the icon beside the field to check that Squabble can reach it before you go further.
+  </Step>
+  <Step title="Enter your username and password">
+    Use the same login you use to sign in to Audiobookshelf directly.
+  </Step>
+  <Step title="Tap Unlock the shelves">
+    Squabble contacts your server and signs you in. If something's wrong with the address or the server can't be reached, an error explains what to check.
+  </Step>
+</Steps>
+
+<Callout variant="tip" title="Connection trouble?">
+If the connect attempt fails, tap <strong>Diagnose Connection</strong> to see a step-by-step breakdown of what Squabble tried and where it stopped — useful for spotting a wrong port or an unreachable address.
+</Callout>
+
+## What happens after connecting
+
+Once connected, tap **Browse Library** to see everything on your server. From there you can search, open any book's details, and download it into your Squabble library — covered in [Browsing and downloading](/help/audiobookshelf/browsing-and-downloading).
+
+<Callout variant="info">
+Your username and password are used once to obtain a login token, then discarded. That token is stored securely on your device and is never sent to Squabble's servers.
+</Callout>
+
+## Disconnecting
+
+You can disconnect from your server at any time. Doing so doesn't delete anything you've already downloaded — it just means Squabble can't reach that server for new downloads or re-downloads until you reconnect.

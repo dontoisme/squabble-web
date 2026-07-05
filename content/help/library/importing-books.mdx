@@ -1,0 +1,49 @@
+---
+title: "Importing Books"
+description: "Add audiobooks from your device to your Squabble library and let Squabble fill in the details."
+order: 1
+---
+
+You bring your own audiobooks to Squabble. This page covers importing a file from your device, what happens automatically once you do, and where Squabble keeps the file so it survives a reinstall.
+
+## Adding a book from your device
+
+<Steps>
+  <Step title="Tap the add button">
+    On your Library screen, tap the <strong>+</strong> button in the bottom-right corner.
+  </Step>
+  <Step title="Choose a source">
+    If you've connected an [Audiobookshelf](/help/audiobookshelf/connecting-your-server) server, an action sheet asks whether to import <strong>From Device</strong> or <strong>From Audiobookshelf</strong>. Otherwise you'll go straight to your device's file picker.
+  </Step>
+  <Step title="Pick the audio file">
+    Choose a single audiobook file (MP3, M4A, M4B, and similar formats all work) from your device or cloud storage.
+  </Step>
+</Steps>
+
+Squabble copies the file into your library and adds it as a new book right away — you don't need to wait for anything else to finish before it shows up.
+
+## What Squabble fills in automatically
+
+As soon as a file is imported, Squabble reads its embedded tags to pull out the title, author, narrator, duration, cover art, and chapter markers. If the file has no usable tags, Squabble falls back to parsing the filename instead.
+
+In the background, Squabble also checks Hardcover-powered enrichment against your book's title and author to fill in anything still missing — narrator, series, and a better cover image — and to link the book to its series for folder browsing. This can take a few moments after import.
+
+<Callout variant="info" title="Missing chapters or artwork?">
+Open the book's details page and tap <strong>Import Extras</strong> to re-run extraction, or <strong>Search Hardcover</strong> to retry the enrichment lookup.
+</Callout>
+
+## Setting up your library storage folder
+
+The first time you import a book, Squabble offers to set up a **library storage folder** — a place on your device (not locked inside the app) where your audio files live. This matters because it's what lets your files survive an app reinstall instead of disappearing with it.
+
+You get three choices:
+
+- **Use recommended location** — Squabble creates a dedicated folder for you (iCloud Drive > Squabble Library on iOS, a SquabbleLibrary folder on Android).
+- **Choose my own folder** — point Squabble at a folder you already use for audiobooks.
+- **Skip for now** — imports stay inside the app's private storage. Squabble will keep reminding you until you set one up.
+
+<Callout variant="warning" title="Skipping has a cost">
+If you skip storage folder setup, your audio files are deleted when Squabble is uninstalled — even though your library list, progress, and comments are safe in the cloud. See [downloads and missing books](/help/library/downloads-and-missing-books) for how recovery works either way.
+</Callout>
+
+Custom folder storage isn't available on iOS yet — imports there stay inside the app until it ships, regardless of which option you tap.

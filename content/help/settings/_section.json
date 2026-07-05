@@ -1,0 +1,6 @@
+{
+  "title": "Settings & Account",
+  "order": 7,
+  "icon": "settings",
+  "description": "Tune your profile, playback defaults, notifications, and guild membership."
+}

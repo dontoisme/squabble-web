@@ -64,6 +64,12 @@ export default function MainLayout({
             >
               {guild ? guild.name : 'Guild'}
             </Link>
+            <Link
+              href="/help"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Help
+            </Link>
           </nav>
 
           <DropdownMenu>

@@ -1,0 +1,31 @@
+---
+title: "Audiobookshelf Connection Issues"
+description: "Fix an unreachable Audiobookshelf server, reconnect prompts, and re-downloading books."
+order: 4
+---
+
+Audiobookshelf (ABS) books stream and download from your own server, so a flaky connection between your device and that server shows up differently than a local file problem. This page covers the three situations people run into most.
+
+## Server unavailable
+
+If Squabble can't reach your Audiobookshelf server, ABS books stay in your library but show a **Server unavailable** badge and won't play until the connection is restored. Local files and anything already downloaded to your device keep working normally, and your progress from the last successful sync still shows up in guild features.
+
+To reconnect:
+
+- Confirm your server is actually running and reachable at its usual address. Self-hosted setups behind a VPN or Tailscale need that connection active on your device too.
+- Check your own network — switching between Wi-Fi and cellular can drop an in-progress connection to the server.
+- Give it a minute and try again. A server waking up from sleep can take a moment to respond.
+
+## The "Reconnect Audiobookshelf" prompt
+
+Your saved sign-in to a server can go stale over time. When it does, Squabble shows a **Reconnect Audiobookshelf** prompt instead of failing silently — tap it and sign back in with your server address and credentials, the same as when you first [connected your server](/help/audiobookshelf/connecting-your-server).
+
+## Re-downloading a book
+
+Because ABS books stream from your server rather than living permanently on your device, certain events can leave one needing a fresh download — reinstalling Squabble, clearing device storage, or archiving a book are the common causes. Open the book's details screen and look for a **Restore to Library** button, which re-downloads it in place without creating a duplicate.
+
+<Callout variant="warning" title="Known limitation">
+There's currently no way to cancel a download once it starts. If you need to stop one, closing the app is the only option — Squabble detects the partial file on your next launch and lets you retry cleanly rather than leaving a broken entry.
+</Callout>
+
+For the full picture on books that show up as missing or "Not on Device" after a reinstall, see [downloads and missing books](/help/library/downloads-and-missing-books).

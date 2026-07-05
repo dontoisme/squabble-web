@@ -37,6 +37,12 @@ export default function LandingPage() {
             <span className="font-semibold text-lg text-foreground">Squabble Inn</span>
           </div>
           <nav className="flex items-center gap-3">
+            <Link
+              href="/help"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Help
+            </Link>
             {loading ? null : user ? (
               <Button asChild>
                 <Link href="/library">Open App</Link>
@@ -172,9 +178,17 @@ export default function LandingPage() {
             <Image src="/icon.png" alt="" width={20} height={20} className="rounded" />
             Squabble Inn
           </div>
-          <p className="text-sm text-muted-foreground">
-            A guild audiobook companion
-          </p>
+          <div className="flex items-center gap-6">
+            <p className="text-sm text-muted-foreground">
+              A guild audiobook companion
+            </p>
+            <Link
+              href="/help"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Help
+            </Link>
+          </div>
         </div>
       </footer>
     </div>
