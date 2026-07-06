@@ -1,3 +1,9 @@
+> **⚠️ MOVED (2026-07-06).** This repo is frozen. The web app now lives in the
+> [`squabble-react-native`](https://github.com/dontoisme/squabble-react-native) monorepo
+> at `apps/web` (full git history preserved via subtree). Vercel deploys from there.
+> Do not commit here — changes will not ship. Beads task tracking (`.beads/`) remains
+> here temporarily until migrated.
+
 # Squabble Web
 
 A minimal web app for leaving hidden timestamped notes on audiobooks with friends.
