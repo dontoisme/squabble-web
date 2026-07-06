@@ -1,5 +1,15 @@
 # 05 — Beads Epic / Task Tree
 
+> **✅ EXECUTED 2026-07-06.** All in-scope epics are closed: E0 (monorepo +
+> Vercel cutover — production now deploys from `squabble-react-native`),
+> E1 (ABS streaming, verified vs the public demo incl. a 66-file book),
+> E2 (theming), E3 (social parity incl. two-account spoiler e2e), E4 (player
+> UX), E5.1–.3 (profile), E6 (epic quests), E7 (auth), E8 (web QA — 32-test
+> Playwright suite + CI vs Vercel previews). Open by decision: 982.4/982.5
+> (notification prefs + web push, backlog). Notable design revision during
+> execution: ABS servers send no CORS headers, so ALL API calls proxy
+> same-origin while media stays direct (see rq4.5 close notes).
+
 Human-readable mirror of the beads tree, **refreshed 2026-07-06** to match the
 approved plan in `squabble-react-native/docs/vision/web-parity-spec.md` +
 `web-parity-implementation.md`. Query live state with `bd list -l web-parity --limit 200`
