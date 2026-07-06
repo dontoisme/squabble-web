@@ -23,6 +23,7 @@ engine / spoiler-critical; **sonnet** = standard feature build over shared logic
 | **E5** — Profile, achievements *(trimmed: .4/.5 → backlog)* | `squabble-web-982` | P3 | E0 | 2 |
 | **E6** — Epic Quests / series | `squabble-web-5a4` | P3 | E0 (5a4.3 also needs 6cu.3) | 2 |
 | **E7** — Auth parity *(now explicitly in scope)* | `squabble-web-6du` | P3 | E0 | 1 |
+| **E8** — Automated web QA (Playwright) *(added 2026-07-06)* | `squabble-web-4ai` | P3 | E0 | 1+ (grows with features) |
 
 ## Tasks by epic
 
@@ -93,6 +94,13 @@ engine / spoiler-critical; **sonnet** = standard feature build over shared logic
 - 6du.1 Google OAuth (popup + redirect fallback, account linking) — M · sonnet
 - 6du.2 Password reset email flow — S · haiku
 - 6du.3 Onboarding alignment (create/join guild → first book) — M · sonnet
+
+**E8 — Automated web QA** (web analog of mobile's Maestro e2e; automates the §8 verification passes)
+- 4ai.1 Playwright scaffold + auth fixture (storage-state, shared test account, dedicated test guild) — M · sonnet
+- 4ai.2 Smoke suite: 7 regression surfaces (gates b8t.6 close + b8t.7 cutover) — M · sonnet
+- 4ai.3 3-theme screenshot pass (after 3z8.3) — S · haiku
+- 4ai.4 Two-account spoiler-gate E2E (Admin-SDK seeding; after 6cu.1) — M · sonnet
+- 4ai.5 CI wiring: smoke vs Vercel preview deploys (after 4ai.2 + b8t.7) — M · sonnet
 
 ## Execution waves & critical path
 
